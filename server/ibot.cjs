@@ -17,9 +17,7 @@ const CONFIG = {
     WEBSOCKET_ORIGIN: 'http://ls.superkinglabs.com',
 
     TIMEOUTS: {
-        MEMBERSHIP_CHECK: 35000,
         MESSAGE_TASK: 60000,
-        MIC_TASK: 2100000,
         AUTH_RESPONSE: 10000,
         CLUB_JOIN: 10000,
         CONNECTION_TIMEOUT: 30000
@@ -27,7 +25,6 @@ const CONFIG = {
 
     DELAYS: {
         BETWEEN_MESSAGES: 600,
-        MIC_CHECK_INTERVAL: 25000,
         RETRY_DELAY: 3000,
         KEEPALIVE_INTERVAL: 15000,
         BETWEEN_BOTS: 1000
@@ -35,11 +32,6 @@ const CONFIG = {
 
     MESSAGE_SETTINGS: {
         TOTAL_MESSAGES: 21
-    },
-
-    MIC_SETTINGS: {
-        MAX_CONCURRENT: 10,
-        CHECK_INTERVAL: 25000
     }
 };
 
@@ -355,55 +347,7 @@ class BotConnection extends EventEmitter {
             this.emit('clubJoined');
         }
 
-        // Handle membership responses
-        if (msg.PU === "GOMPA") {
-            this.handleMembershipResponse(msg);
-        }
-
-        // Handle mic invitations
-        if (msg.RH === "CBC" && msg.PU === "SMI") {
-            this.handleMicInvite(msg);
-        }
-
         this.emit('message', msg);
-    }
-
-    handleMembershipResponse(msg) {
-        if (!msg.PY?.ER) {
-            const smp = Number(msg.PY?.DP?.SMP?.P) || 0;
-            const mtsp = Number(msg.PY?.DP?.MTSP?.P) || 0;
-
-            const membershipData = {
-                membership: true,
-                message: smp === 200,
-                micTime: mtsp === 600,
-                lastChecked: new Date().toISOString()
-            };
-
-            this.emit('membershipChecked', membershipData);
-        } else {
-            this.emit('membershipChecked', {
-                membership: false,
-                message: false,
-                micTime: false,
-                lastChecked: new Date().toISOString()
-            });
-        }
-    }
-
-    handleMicInvite(msg) {
-        Logger.info(`Mic invite received for ${this.bot.name}`);
-
-        const response = {
-            RH: "CBC",
-            PU: "TMS",
-            SQ: this.sequenceNumber++,
-            PY: JSON.stringify({ MN: 1, TM: true, RS: true })
-        };
-
-        if (Utils.sendMessage(this.ws, JSON.stringify(response))) {
-            this.emit('micInviteAccepted');
-        }
     }
 
     startKeepalive() {
@@ -463,22 +407,6 @@ class BotConnection extends EventEmitter {
             }),
             SQ: this.sequenceNumber++,
             EN: false
-        };
-
-        return Utils.sendMessage(this.ws, JSON.stringify(msg));
-    }
-
-    sendMicCommand() {
-        return this.sendClubMessage("/mic");
-    }
-
-    checkMembershipStatus(clubCode = null) {
-        const code = clubCode || this.currentClubCode || CONFIG.CLUB_CODE;
-        
-        const msg = {
-            RH: "CBC",
-            PU: "GOMP",
-            PY: JSON.stringify({ CID: code.toString() })
         };
 
         return Utils.sendMessage(this.ws, JSON.stringify(msg));
@@ -580,12 +508,7 @@ class PersistentConnectionManager {
                 ...bot,
                 botId,
                 source: 'main',
-                index,
-                // Preserve existing membership data if available
-                membership: bot.membership || false,
-                message: bot.message || false,
-                micTime: bot.micTime || false,
-                lastChecked: bot.lastChecked || null
+                index
             });
         });
 
@@ -597,14 +520,6 @@ class PersistentConnectionManager {
         
         // Store existing data
         const existingData = new Map();
-        this.bots.forEach((bot, botId) => {
-            existingData.set(bot.gc, {
-                membership: bot.membership,
-                message: bot.message,
-                micTime: bot.micTime,
-                lastChecked: bot.lastChecked
-            });
-        });
         
         // Clear and reload
         this.bots.clear();
@@ -618,11 +533,7 @@ class PersistentConnectionManager {
                 ...bot,
                 botId,
                 source: 'main',
-                index,
-                membership: bot.membership || existing?.membership || false,
-                message: bot.message || existing?.message || false,
-                micTime: bot.micTime || existing?.micTime || false,
-                lastChecked: bot.lastChecked || existing?.lastChecked || null
+                index
             });
         });
         
@@ -717,12 +628,7 @@ class PersistentConnectionManager {
                 inClub: connection?.isInClub || false,
                 clubCode: connection?.currentClubCode || null,
                 status: connection?.status || 'disconnected',
-                uptime: connection ? Date.now() - connection.createdAt : 0,
-                // Include task completion status
-                membership: bot.membership,
-                message: bot.message,
-                micTime: bot.micTime,
-                lastChecked: bot.lastChecked
+                uptime: connection ? Date.now() - connection.createdAt : 0
             };
         });
     }
@@ -760,9 +666,7 @@ const TaskState = {
     }
 };
 
-// ==================== MEMBERSHIP TASK ====================
-const MembershipTask = {
-    async checkBot(botId) {
+// ==================== MESSAGE TASK ====================
 const MessageTask = {
     async sendMessages(botId) {
         const connection = connectionManager.getConnection(botId);
@@ -836,9 +740,6 @@ const MessageTask = {
                 TaskState.message.completed++;
                 TaskState.message.completedBots.add(botId);
                 
-                // Update bot data
-                connectionManager.updateBotData(botId, { message: true });
-                
                 Logger.success(`Message task completed for ${botId}`);
             } else {
                 TaskState.message.failed++;
@@ -867,11 +768,7 @@ const MessageTask = {
                 ep: bot.ep,
                 gc: bot.gc,
                 snuid: bot.snuid,
-                ui: bot.ui,
-                membership: bot.membership || false,
-                message: bot.message || false,
-                micTime: bot.micTime || false,
-                lastChecked: bot.lastChecked || null
+                ui: bot.ui
             }));
 
             await FileManager.saveBots(botsToSave);
