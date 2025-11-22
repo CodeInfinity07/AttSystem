@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Telegram bot management dashboard built with React (frontend) and Express (backend). The application provides a unified interface for managing multiple Telegram bots, including membership verification, message sending, voice operations, name changes, and batch bot loading. The dashboard uses a productivity-focused design system inspired by Linear/Vercel, optimized for data-dense workflows.
+A Telegram bot management dashboard built with React (frontend) and Express (backend). The application provides a unified interface for managing multiple Telegram bots, including bot connection management, message sending, and name changes. The dashboard uses a productivity-focused design system inspired by Linear/Vercel, optimized for data-dense workflows.
 
 ## User Preferences
 
@@ -40,7 +40,7 @@ Preferred communication style: Simple, everyday language.
 
 **Server Framework**
 - **Express.js** with TypeScript running on Node.js
-- RESTful API endpoints organized by feature (messages, mic, name-change, loader, membership)
+- RESTful API endpoints organized by feature (messages, name-change, bot management)
 - In-memory storage implementation via `MemStorage` class (implements `IStorage` interface)
 - Custom request logging middleware that captures JSON responses and logs API calls
 
@@ -52,9 +52,9 @@ Preferred communication style: Simple, everyday language.
 
 **Storage Layer**
 - Interface-based storage abstraction (`IStorage`) for future database implementations
-- In-memory Map-based storage for bots, task states, and membership results
+- In-memory Map-based storage for bots and task states
 - Task state includes: status (idle/running/stopped), progress metrics, and bot arrays
-- Bot entities tracked with status, permissions (msgPerm, micPerm), and metadata
+- Bot entities tracked with connection details (name, key, ep, gc, snuid, ui) and metadata
 
 ### Data Storage Solutions
 
