@@ -18,15 +18,13 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Bot status types
-export type BotStatus = 'idle' | 'member' | 'non-member' | 'checking' | 'connected' | 'joining' | 'processing' | 'completed' | 'failed';
+export type BotStatus = 'idle' | 'connected' | 'processing' | 'completed' | 'failed';
 
 export interface Bot {
   id: string;
   name: string;
   token?: string;
   status: BotStatus;
-  msgPerm?: boolean;
-  micPerm?: boolean;
 }
 
 export interface TaskProgress {

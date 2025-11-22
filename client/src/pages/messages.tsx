@@ -20,25 +20,11 @@ interface MessageTaskStatusResponse {
   };
 }
 
-interface MembershipStatusResponse {
-  success: boolean;
-  isChecking: boolean;
-  totalBots: number;
-  completed: number;
-  failed: number;
-  bots: Bot[];
-}
-
 export default function MessagesPage() {
   const { toast } = useToast();
   
   const { data: taskResponse } = useQuery<MessageTaskStatusResponse>({
     queryKey: ['/api/tasks/message/status'],
-    refetchInterval: 3000,
-  });
-
-  const { data: membershipResponse } = useQuery<MembershipStatusResponse>({
-    queryKey: ['/api/tasks/membership/status'],
     refetchInterval: 3000,
   });
 
@@ -75,14 +61,7 @@ export default function MessagesPage() {
   const failed = taskStatus?.failed || 0;
   const total = taskStatus?.totalEligible || 0;
 
-  // Filter eligible bots from membership data
-  // Eligible = member AND has not completed message task yet
-  const allBots = membershipResponse?.bots || [];
-  const eligibleBots = allBots.filter(bot => 
-    bot.hasOwnProperty('membership') && 
-    (bot as any).membership === true && 
-    !(bot as any).message
-  );
+  const eligibleBots: Bot[] = [];
 
   return (
     <div className="space-y-6">
@@ -95,17 +74,7 @@ export default function MessagesPage() {
         <TaskControlCard
           title="Message Task"
           status={isRunning ? "Running" : "Idle"}
-          onStart={() => {
-            if (eligibleBots.length === 0) {
-              toast({ 
-                title: "No eligible bots", 
-                description: "Run membership check first to find eligible bots",
-                variant: "destructive" 
-              });
-              return;
-            }
-            startMutation.mutate();
-          }}
+          onStart={() => startMutation.mutate()}
           onStop={() => stopMutation.mutate()}
           isRunning={isRunning}
           icon={MessageSquare}
@@ -121,9 +90,9 @@ export default function MessagesPage() {
       </div>
 
       <BotList
-        title="Eligible Bots"
+        title="Completed Bots"
         bots={eligibleBots}
-        emptyMessage="Run membership check first"
+        emptyMessage="No bots have completed messages yet"
         iconColor="bg-success/20 text-success"
       />
     </div>

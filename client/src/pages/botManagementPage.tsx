@@ -13,7 +13,6 @@ interface Bot {
   botId: string;
   name: string;
   gc: string;
-  source: 'main' | 'loader';
   connected: boolean;
   inClub: boolean;
   clubCode: string | null;
@@ -27,8 +26,6 @@ interface BotsResponse {
   stats: {
     totalBots: number;
     connected: number;
-    mainBots: number;
-    loaderBots: number;
   };
 }
 
@@ -44,7 +41,6 @@ export default function BotManagementPage() {
   const [clubCode, setClubCode] = useState("2341357");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "connected" | "disconnected" | "inClub">("all");
-  const [filterSource, setFilterSource] = useState<"all" | "main" | "loader">("all");
   const [authPrompts, setAuthPrompts] = useState<AuthPrompt[]>([]);
   const [selectedAuthPrompt, setSelectedAuthPrompt] = useState<AuthPrompt | null>(null);
   const [tokenInput, setTokenInput] = useState("");
@@ -188,12 +184,8 @@ export default function BotManagementPage() {
       (filterStatus === "connected" && bot.connected) ||
       (filterStatus === "disconnected" && !bot.connected) ||
       (filterStatus === "inClub" && bot.inClub);
-
-    // Source filter
-    const matchesSource = 
-      filterSource === "all" || bot.source === filterSource;
     
-    return matchesSearch && matchesStatus && matchesSource;
+    return matchesSearch && matchesStatus;
   }) || [];
 
   if (isLoading) {
@@ -218,7 +210,7 @@ export default function BotManagementPage() {
     );
   }
 
-  const { stats } = data || { stats: { totalBots: 0, connected: 0, mainBots: 0, loaderBots: 0 } };
+  const { stats } = data || { stats: { totalBots: 0, connected: 0 } };
   const disconnectedCount = stats.totalBots - stats.connected;
   const inClubCount = data?.bots?.filter(b => b.inClub).length || 0;
 
@@ -306,9 +298,6 @@ export default function BotManagementPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="text-2xl sm:text-3xl font-bold">{stats.totalBots}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.mainBots}M + {stats.loaderBots}L
-            </p>
           </CardContent>
         </Card>
 
@@ -403,19 +392,6 @@ export default function BotManagementPage() {
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="filterSource" className="text-xs font-semibold">Source</Label>
-              <select
-                id="filterSource"
-                value={filterSource}
-                onChange={(e) => setFilterSource(e.target.value as any)}
-                className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
-              >
-                <option value="all">All ({stats.totalBots})</option>
-                <option value="main">Main ({stats.mainBots})</option>
-                <option value="loader">Loader ({stats.loaderBots})</option>
-              </select>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -433,7 +409,7 @@ export default function BotManagementPage() {
         <CardContent>
           {filteredBots.length === 0 ? (
             <div className="text-center py-8 sm:py-12 text-muted-foreground text-sm">
-              {searchTerm || filterStatus !== "all" || filterSource !== "all"
+              {searchTerm || filterStatus !== "all"
                 ? "No bots match your filters" 
                 : "No bots available"}
             </div>
@@ -452,16 +428,7 @@ export default function BotManagementPage() {
                         }`} />
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="font-semibold text-sm truncate">{bot.name}</div>
-                            <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${
-                              bot.source === 'main' 
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' 
-                                : 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-                            }`}>
-                              {bot.source}
-                            </span>
-                          </div>
+                          <div className="font-semibold text-sm truncate">{bot.name}</div>
                           <div className="text-xs text-muted-foreground font-mono truncate mt-0.5">
                             {bot.gc}
                           </div>
