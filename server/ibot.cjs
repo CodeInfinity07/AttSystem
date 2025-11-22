@@ -751,26 +751,11 @@ const authPrompts = new Map(); // botId -> { botId, botName, message, timestamp 
 
 // ==================== TASK STATE ====================
 const TaskState = {
-    membership: {
-        isRunning: false,
-        total: 0,
-        completed: 0,
-        failed: 0,
-        results: new Map()
-    },
     message: {
         isRunning: false,
         total: 0,
         completed: 0,
         failed: 0,
-        completedBots: new Set()
-    },
-    mic: {
-        isRunning: false,
-        total: 0,
-        completed: 0,
-        failed: 0,
-        active: new Map(),
         completedBots: new Set()
     }
 };
@@ -778,113 +763,6 @@ const TaskState = {
 // ==================== MEMBERSHIP TASK ====================
 const MembershipTask = {
     async checkBot(botId) {
-        const connection = connectionManager.getConnection(botId);
-        if (!connection) {
-            return { success: false, error: 'Bot not connected' };
-        }
-
-        return new Promise((resolve) => {
-            const timeout = setTimeout(() => {
-                resolve({ success: false, error: 'Timeout' });
-            }, CONFIG.TIMEOUTS.MEMBERSHIP_CHECK);
-
-            connection.once('membershipChecked', (data) => {
-                clearTimeout(timeout);
-                resolve({ success: true, data });
-            });
-
-            // Join club and check membership
-            if (!connection.isInClub) {
-                connection.joinClub(CONFIG.CLUB_CODE);
-                
-                connection.once('clubJoined', () => {
-                    setTimeout(() => {
-                        connection.checkMembershipStatus(CONFIG.CLUB_CODE);
-                    }, 1000);
-                });
-            } else {
-                connection.checkMembershipStatus(CONFIG.CLUB_CODE);
-            }
-        });
-    },
-
-    async run(botIds) {
-        if (TaskState.membership.isRunning) {
-            return { success: false, message: 'Membership task already running' };
-        }
-
-        TaskState.membership.isRunning = true;
-        TaskState.membership.total = botIds.length;
-        TaskState.membership.completed = 0;
-        TaskState.membership.failed = 0;
-        TaskState.membership.results.clear();
-
-        Logger.info(`Starting membership check for ${botIds.length} bots`);
-
-        for (const botId of botIds) {
-            if (!TaskState.membership.isRunning) break;
-
-            const result = await this.checkBot(botId);
-            
-            if (result.success) {
-                TaskState.membership.completed++;
-                TaskState.membership.results.set(botId, result.data);
-                
-                // Update bot data immediately
-                connectionManager.updateBotData(botId, result.data);
-            } else {
-                TaskState.membership.failed++;
-                Logger.error(`Membership check failed for ${botId}: ${result.error}`);
-            }
-
-            await Utils.delay(CONFIG.DELAYS.BETWEEN_BOTS);
-        }
-
-        TaskState.membership.isRunning = false;
-        Logger.success(`Membership check completed: ${TaskState.membership.completed} successful, ${TaskState.membership.failed} failed`);
-
-        // Save results back to file
-        await this.saveResults();
-
-        return { success: true };
-    },
-
-    async saveResults() {
-        try {
-            const allBots = Array.from(connectionManager.bots.values());
-            
-            const botsToSave = allBots.map(bot => ({
-                name: bot.name,
-                key: bot.key,
-                ep: bot.ep,
-                gc: bot.gc,
-                snuid: bot.snuid,
-                ui: bot.ui,
-                membership: bot.membership || false,
-                message: bot.message || false,
-                micTime: bot.micTime || false,
-                lastChecked: bot.lastChecked || null
-            }));
-
-            await FileManager.saveBots(botsToSave);
-            
-            // Save members file
-            const members = botsToSave.filter(bot => bot.membership === true);
-            await FileManager.saveMembers(members);
-            
-            Logger.success('Membership results saved to files');
-        } catch (error) {
-            Logger.error(`Failed to save results: ${error.message}`);
-        }
-    },
-
-    stop() {
-        TaskState.membership.isRunning = false;
-        Logger.info('Membership task stopped');
-    }
-};
-
-// ==================== MESSAGE TASK ====================
 const MessageTask = {
     async sendMessages(botId) {
         const connection = connectionManager.getConnection(botId);
@@ -1006,154 +884,6 @@ const MessageTask = {
     stop() {
         TaskState.message.isRunning = false;
         Logger.info('Message task stopped');
-    }
-};
-
-// ==================== MIC TASK ====================
-const MicTask = {
-    async setupMicBot(botId) {
-        const connection = connectionManager.getConnection(botId);
-        if (!connection) {
-            return { success: false, error: 'Bot not connected' };
-        }
-
-        return new Promise((resolve) => {
-            let micCheckInterval = null;
-            let onMic = false;
-
-            const timeout = setTimeout(() => {
-                if (micCheckInterval) clearInterval(micCheckInterval);
-                TaskState.mic.active.delete(botId);
-                resolve({ success: false, error: 'Timeout' });
-            }, CONFIG.TIMEOUTS.MIC_TASK);
-
-            const startMicTask = () => {
-                micCheckInterval = setInterval(() => {
-                    if (!TaskState.mic.isRunning) {
-                        clearInterval(micCheckInterval);
-                        clearTimeout(timeout);
-                        TaskState.mic.active.delete(botId);
-                        resolve({ success: false, error: 'Task stopped' });
-                        return;
-                    }
-
-                    if (!onMic) {
-                        Logger.debug(`Sending /mic command for ${botId}`);
-                        connection.sendMicCommand();
-                    } else {
-                        Logger.debug(`${botId} is on mic, checking status`);
-                        connection.checkMembershipStatus();
-                    }
-                }, CONFIG.MIC_SETTINGS.CHECK_INTERVAL);
-
-                TaskState.mic.active.set(botId, { onMic: false });
-            };
-
-            connection.on('micInviteAccepted', () => {
-                onMic = true;
-                const state = TaskState.mic.active.get(botId);
-                if (state) state.onMic = true;
-                Logger.success(`${botId} accepted mic invite`);
-            });
-
-            connection.on('membershipChecked', (data) => {
-                if (data.micTime) {
-                    clearInterval(micCheckInterval);
-                    clearTimeout(timeout);
-                    TaskState.mic.active.delete(botId);
-                    Logger.success(`Mic task completed for ${botId}`);
-                    resolve({ success: true, data });
-                }
-            });
-
-            if (!connection.isInClub) {
-                connection.joinClub(CONFIG.CLUB_CODE);
-                connection.once('clubJoined', startMicTask);
-            } else {
-                startMicTask();
-            }
-        });
-    },
-
-    async run(botIds) {
-        if (TaskState.mic.isRunning) {
-            return { success: false, message: 'Mic task already running' };
-        }
-
-        TaskState.mic.isRunning = true;
-        TaskState.mic.total = botIds.length;
-        TaskState.mic.completed = 0;
-        TaskState.mic.failed = 0;
-        TaskState.mic.active.clear();
-        TaskState.mic.completedBots.clear();
-
-        Logger.info(`Starting mic task for ${botIds.length} bots`);
-
-        // Process in batches
-        const maxConcurrent = CONFIG.MIC_SETTINGS.MAX_CONCURRENT;
-        for (let i = 0; i < botIds.length; i += maxConcurrent) {
-            if (!TaskState.mic.isRunning) break;
-
-            const batch = botIds.slice(i, i + maxConcurrent);
-            Logger.info(`Processing batch ${Math.floor(i / maxConcurrent) + 1}: ${batch.length} bots`);
-            
-            const promises = batch.map(botId => this.setupMicBot(botId));
-
-            const results = await Promise.all(promises);
-            
-            results.forEach((result, index) => {
-                const botId = batch[index];
-                if (result.success) {
-                    TaskState.mic.completed++;
-                    TaskState.mic.completedBots.add(botId);
-                    
-                    // Update bot data
-                    connectionManager.updateBotData(botId, { micTime: true });
-                } else {
-                    TaskState.mic.failed++;
-                    Logger.error(`Mic task failed for ${botId}: ${result.error}`);
-                }
-            });
-        }
-
-        TaskState.mic.isRunning = false;
-        TaskState.mic.active.clear();
-        Logger.success(`Mic task completed: ${TaskState.mic.completed} successful, ${TaskState.mic.failed} failed`);
-
-        // Save results
-        await this.saveResults();
-
-        return { success: true };
-    },
-
-    async saveResults() {
-        try {
-            const allBots = Array.from(connectionManager.bots.values());
-            
-            const botsToSave = allBots.map(bot => ({
-                name: bot.name,
-                key: bot.key,
-                ep: bot.ep,
-                gc: bot.gc,
-                snuid: bot.snuid,
-                ui: bot.ui,
-                membership: bot.membership || false,
-                message: bot.message || false,
-                micTime: bot.micTime || false,
-                lastChecked: bot.lastChecked || null
-            }));
-
-            await FileManager.saveBots(botsToSave);
-            Logger.success('Mic task results saved to file');
-        } catch (error) {
-            Logger.error(`Failed to save mic results: ${error.message}`);
-        }
-    },
-
-    stop() {
-        TaskState.mic.isRunning = false;
-        TaskState.mic.active.clear();
-        Logger.info('Mic task stopped');
     }
 };
 
@@ -1399,38 +1129,6 @@ app.post('/api/bots/bulk/disconnect', (req, res) => {
 
 // ==================== TASK ROUTES ====================
 
-// Membership task
-app.get('/api/tasks/membership/status', (req, res) => {
-    res.json({ success: true, status: TaskState.membership });
-});
-
-app.post('/api/tasks/membership/start', async (req, res) => {
-    try {
-        const { botIds } = req.body;
-        
-        let botsToUse = botIds;
-        
-        if (!botIds || !Array.isArray(botIds) || botIds.length === 0) {
-            // Use all connected bots - NO reconnection needed
-            botsToUse = connectionManager.getAllConnectedBots();
-
-            if (botsToUse.length === 0) {
-                return res.json({ success: false, message: 'No connected bots available' });
-            }
-        }
-
-        res.json({ success: true, message: `Starting membership task for ${botsToUse.length} bots` });
-        MembershipTask.run(botsToUse);
-    } catch (error) {
-        Logger.error(`Membership task error: ${error.message}`);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-app.post('/api/tasks/membership/stop', (req, res) => {
-    MembershipTask.stop();
-    res.json({ success: true, message: 'Membership task stopped' });
-});
 
 // Message task
 app.get('/api/tasks/message/status', (req, res) => {
@@ -1466,44 +1164,6 @@ app.post('/api/tasks/message/stop', (req, res) => {
 });
 
 // Mic task
-app.get('/api/tasks/mic/status', (req, res) => {
-    res.json({ 
-        success: true, 
-        status: {
-            ...TaskState.mic,
-            activeCount: TaskState.mic.active.size
-        }
-    });
-});
-
-app.post('/api/tasks/mic/start', async (req, res) => {
-    try {
-        const { botIds } = req.body;
-        
-        let botsToUse = botIds;
-        
-        if (!botIds || !Array.isArray(botIds) || botIds.length === 0) {
-            // Use all connected bots - NO reconnection needed
-            botsToUse = connectionManager.getAllConnectedBots();
-
-            if (botsToUse.length === 0) {
-                return res.json({ success: false, message: 'No connected bots available' });
-            }
-        }
-
-        res.json({ success: true, message: `Starting mic task for ${botsToUse.length} bots` });
-        MicTask.run(botsToUse);
-    } catch (error) {
-        Logger.error(`Mic task error: ${error.message}`);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-app.post('/api/tasks/mic/stop', (req, res) => {
-    MicTask.stop();
-    res.json({ success: true, message: 'Mic task stopped' });
-});
-
 // Connection stats
 app.get('/api/connections/stats', (req, res) => {
     try {
@@ -1520,12 +1180,7 @@ app.get('/api/connections/stats', (req, res) => {
             connectionStats: stats,
             systemStats,
             taskStats: {
-                membership: TaskState.membership,
-                message: TaskState.message,
-                mic: {
-                    ...TaskState.mic,
-                    activeCount: TaskState.mic.active.size
-                }
+                message: TaskState.message
             },
             config: {
                 botsFile: CONFIG.BOTS_FILE,
@@ -1537,112 +1192,6 @@ app.get('/api/connections/stats', (req, res) => {
         Logger.error(`Stats error: ${error.message}`);
         res.status(500).json({ success: false, message: error.message });
     }
-});
-
-// Loader endpoints
-app.get('/api/loader/status', (req, res) => {
-    try {
-        const allBots = connectionManager.getAllBotsWithStatus();
-        const stats = connectionManager.getStats();
-        
-        res.json({
-            success: true,
-            loaderStatus: {
-                isRunning: TaskState.membership.isRunning || TaskState.message.isRunning || TaskState.mic.isRunning,
-                isConnecting: false,
-                isJoining: TaskState.membership.isRunning,
-                totalBots: stats.totalBots,
-                availableBots: stats.totalBots,
-                connected: stats.connected,
-                joined: allBots.filter(b => b.inClub).length,
-                failed: 0,
-                clubCode: CONFIG.CLUB_CODE.toString(),
-                bots: allBots.map(b => ({
-                    ...b,
-                    connecting: false,
-                    connected: b.connected,
-                    joining: false,
-                    joined: b.inClub,
-                    failed: false,
-                    connectionId: b.botId,
-                    error: null
-                })),
-                sourceFile: CONFIG.BOTS_FILE,
-                activeConnections: []
-            }
-        });
-    } catch (error) {
-        Logger.error(`Loader status error: ${error.message}`);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-app.post('/api/loader/connect', async (req, res) => {
-    try {
-        const { clubCode, botCount } = req.body;
-        const allBots = connectionManager.getAllBotsWithStatus();
-        let botsToConnect = allBots.filter(b => !b.connected);
-        
-        if (botCount && botCount > 0) {
-            botsToConnect = botsToConnect.slice(0, botCount);
-        }
-        
-        const botIds = botsToConnect.map(b => b.botId);
-        
-        for (const botId of botIds) {
-            // Check if connection already exists, reuse it instead of creating new one
-            let connection = connectionManager.getConnection(botId);
-            if (!connection) {
-                const bot = connectionManager.getBot(botId);
-                if (bot) {
-                    connection = new BotConnection(bot, botId);
-                    connectionManager.addConnection(botId, connection);
-                }
-            }
-        }
-        
-        res.json({ success: true, message: `Connecting ${botIds.length} bots` });
-    } catch (error) {
-        Logger.error(`Loader connect error: ${error.message}`);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-app.post('/api/loader/join', async (req, res) => {
-    try {
-        const connectedBots = connectionManager.getAllConnectedBots();
-        
-        for (const botId of connectedBots) {
-            const connection = connectionManager.getConnection(botId);
-            if (connection && !connection.isInClub) {
-                connection.joinClub(CONFIG.CLUB_CODE);
-            }
-        }
-        
-        res.json({ success: true, message: `Joining ${connectedBots.length} bots to club` });
-    } catch (error) {
-        Logger.error(`Loader join error: ${error.message}`);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-app.post('/api/loader/stop', (req, res) => {
-    try {
-        MembershipTask.stop();
-        MessageTask.stop();
-        MicTask.stop();
-        connectionManager.disconnectAll();
-        
-        res.json({ success: true, message: 'Loader stopped' });
-    } catch (error) {
-        Logger.error(`Loader stop error: ${error.message}`);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// Dashboard
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 // Error handlers
@@ -1694,19 +1243,8 @@ app.listen(CONFIG.PORT, async () => {
             Logger.info(`Connected bots: ${stats.connected}/${stats.totalBots}`);
         }
 
-        let activeTasks = [];
-        if (TaskState.membership.isRunning) {
-            activeTasks.push(`membership (${TaskState.membership.completed}/${TaskState.membership.total})`);
-        }
         if (TaskState.message.isRunning) {
-            activeTasks.push(`message (${TaskState.message.completed}/${TaskState.message.total})`);
-        }
-        if (TaskState.mic.isRunning) {
-            activeTasks.push(`mic (${TaskState.mic.completed}/${TaskState.mic.total})`);
-        }
-
-        if (activeTasks.length > 0) {
-            Logger.info(`Active tasks: ${activeTasks.join(', ')}`);
+            Logger.info(`Active task: message (${TaskState.message.completed}/${TaskState.message.total})`);
         }
     }, 60000); // Every 60 seconds
 
@@ -1717,9 +1255,7 @@ app.listen(CONFIG.PORT, async () => {
 const shutdown = (signal) => {
     Logger.info(`Received ${signal}, shutting down gracefully...`);
     
-    MembershipTask.stop();
     MessageTask.stop();
-    MicTask.stop();
     connectionManager.disconnectAll();
 
     Logger.success('Shutdown completed');
