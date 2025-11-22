@@ -6,10 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import MessagesPage from "@/pages/messages";
-import MicTaskPage from "@/pages/mic-task";
 import NameChangePage from "@/pages/name-change";
-import LoaderPage from "@/pages/loader";
-import MembershipPage from "@/pages/membership";
 import NotFound from "@/pages/not-found";
 import BotManagementPage from "@/pages/botManagementPage";
 
@@ -19,10 +16,7 @@ function Router() {
       <Route path="/" component={BotManagementPage} />
       <Route path="/bot-management" component={BotManagementPage} />
       <Route path="/messages" component={MessagesPage} />
-      <Route path="/mic" component={MicTaskPage} />
       <Route path="/name-change" component={NameChangePage} />
-      <Route path="/loader" component={LoaderPage} />
-      <Route path="/membership" component={MembershipPage} />
       <Route component={NotFound} />
     </Switch>
   );
