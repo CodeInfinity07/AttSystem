@@ -1,4 +1,4 @@
-import { Bot, MessageSquare, Mic, User, UserCog, UserCheck,PlugZap } from "lucide-react";
+import { Bot, MessageSquare, UserCog, PlugZap } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -25,24 +25,9 @@ const items = [
     icon: MessageSquare,
   },
   {
-    title: "Mic Task",
-    url: "/mic",
-    icon: Mic,
-  },
-  {
     title: "Name Change",
     url: "/name-change",
     icon: UserCog,
-  },
-  {
-    title: "Loader",
-    url: "/loader",
-    icon: User,
-  },
-  {
-    title: "Membership",
-    url: "/membership",
-    icon: UserCheck,
   },
 ];
 
