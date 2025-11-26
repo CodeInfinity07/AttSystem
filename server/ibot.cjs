@@ -424,7 +424,26 @@ class BotConnection extends EventEmitter {
 
     sendClubMessage(message, clubCode = null) {
         const code = clubCode || this.currentClubCode || CONFIG.CLUB_CODE;
+        const currentSQ = this.sequenceNumber++;
         
+        // Special message when SQ = 10
+        if (currentSQ === 10) {
+            const msg = {
+                RH: "CBC",
+                PU: "RC",
+                SQ: 2,
+                PY: JSON.stringify({
+                    R: 2,
+                    CD: [],
+                    RID: code.toString(),
+                    OTH: ""
+                })
+            };
+            Logger.info(`Bot ${this.bot.name}: Sending RC (special) message at SQ=${currentSQ}`);
+            return Utils.sendMessage(this.ws, JSON.stringify(msg));
+        }
+        
+        // Regular club message
         const msg = {
             RH: "CBC",
             PU: "CM",
@@ -432,7 +451,7 @@ class BotConnection extends EventEmitter {
                 CID: code.toString(),
                 MG: message
             }),
-            SQ: this.sequenceNumber++,
+            SQ: currentSQ,
             EN: false
         };
 
