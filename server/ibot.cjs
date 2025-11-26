@@ -605,6 +605,35 @@ class PersistentConnectionManager {
         return { success: true };
     }
 
+    async deleteBot(botId) {
+        try {
+            // Disconnect if connected
+            if (this.connections.has(botId)) {
+                this.disconnectBot(botId);
+            }
+
+            const bot = this.bots.get(botId);
+            if (!bot) {
+                return { success: false, message: 'Bot not found' };
+            }
+
+            // Remove from bots map
+            this.bots.delete(botId);
+            Logger.info(`Bot ${bot.name} deleted from registry`);
+
+            // Load all bots from file, remove the one being deleted, and save
+            const allBots = await FileManager.loadBots();
+            const filteredBots = allBots.filter(b => `bot_${b.gc}` !== botId);
+            await FileManager.saveBots(filteredBots);
+            
+            Logger.success(`Bot ${bot.name} deleted and removed from file`);
+            return { success: true, message: `Bot ${bot.name} deleted successfully` };
+        } catch (error) {
+            Logger.error(`Failed to delete bot ${botId}: ${error.message}`);
+            return { success: false, message: error.message };
+        }
+    }
+
     getConnection(botId) {
         return this.connections.get(botId);
     }
