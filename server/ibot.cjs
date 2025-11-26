@@ -731,28 +731,42 @@ const MessageTask = {
 
         Logger.info(`Starting message task for ${botIds.length} bots with club code: ${CONFIG.CLUB_CODE}`);
 
+        // Phase 1: Make all bots join the club
+        Logger.info(`Phase 1: Making ${botIds.length} bots join club ${CONFIG.CLUB_CODE}`);
+        const joinedBots = [];
+        
         for (const botId of botIds) {
             if (!TaskState.message.isRunning) break;
 
-            // Join club first
             const connection = connectionManager.getConnection(botId);
             if (connection) {
                 const joinSuccess = connection.joinClub(CONFIG.CLUB_CODE);
-                if (!joinSuccess) {
-                    Logger.warn(`Failed to join club ${CONFIG.CLUB_CODE} for bot ${botId}`);
+                if (joinSuccess) {
+                    joinedBots.push(botId);
+                    Logger.info(`Bot ${botId} joining club ${CONFIG.CLUB_CODE}`);
+                } else {
+                    Logger.warn(`Failed to join club for bot ${botId}`);
                     TaskState.message.failed++;
-                    await Utils.delay(CONFIG.DELAYS.BETWEEN_BOTS);
-                    continue;
                 }
-                await Utils.delay(1000); // Wait for club join to process
             }
+            await Utils.delay(CONFIG.DELAYS.BETWEEN_BOTS);
+        }
+
+        // Wait for all club joins to complete
+        await Utils.delay(2000);
+        Logger.success(`Phase 1 complete: ${joinedBots.length} bots ready to send messages`);
+
+        // Phase 2: All bots send messages in sequence
+        Logger.info(`Phase 2: Starting message sending from ${joinedBots.length} bots`);
+        
+        for (const botId of joinedBots) {
+            if (!TaskState.message.isRunning) break;
 
             const result = await this.sendMessages(botId);
             
             if (result.success) {
                 TaskState.message.completed++;
                 TaskState.message.completedBots.add(botId);
-                
                 Logger.success(`Message task completed for ${botId}`);
             } else {
                 TaskState.message.failed++;
