@@ -164,7 +164,10 @@ export default function BotManagementPage() {
   });
 
   const importBotsMutation = useMutation({
-    mutationFn: (botStrings: string[]) => apiRequest('POST', '/api/bots/import', { botStrings }),
+    mutationFn: async (botStrings: string[]) => {
+      const response = await apiRequest('POST', '/api/bots/import', { botStrings });
+      return await response.json();
+    },
     onSuccess: (data: any) => {
       toast({ title: `Successfully added ${data.added} bot(s)` });
       setImportText("");
