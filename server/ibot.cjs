@@ -24,7 +24,7 @@ const CONFIG = {
     },
 
     DELAYS: {
-        BETWEEN_MESSAGES: 500,
+        BETWEEN_MESSAGES: 100,
         RETRY_DELAY: 3000,
         KEEPALIVE_INTERVAL: 15000,
         BETWEEN_BOTS: 100
