@@ -397,14 +397,27 @@ class BotConnection extends EventEmitter {
     }
 
     leaveClub() {
+        Logger.debug(`leaveClub() called for ${this.bot.name} - authenticated: ${this.isAuthenticated}, inClub: ${this.isInClub}, wsOpen: ${this.ws && this.ws.readyState === WebSocket.OPEN}`);
+        
         if (!this.isAuthenticated) {
+            Logger.warn(`Bot ${this.bot.name}: Cannot leave club - not authenticated`);
+            return false;
+        }
+
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            Logger.warn(`Bot ${this.bot.name}: Cannot leave club - WebSocket not open (state: ${this.ws ? this.ws.readyState : 'null'})`);
             return false;
         }
 
         const success = Utils.sendMessage(this.ws, Utils.createLeaveClubMessage());
+        Logger.info(`Bot ${this.bot.name}: Leave club message send result: ${success}`);
+        
         if (success) {
             this.isInClub = false;
             this.currentClubCode = null;
+            Logger.success(`Bot ${this.bot.name}: Successfully sent leave club message`);
+        } else {
+            Logger.warn(`Bot ${this.bot.name}: Failed to send leave club message`);
         }
         return success;
     }
