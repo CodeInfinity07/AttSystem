@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Network, Link as LinkIcon, LogIn, LogOut, Copy, Power, Plus } from "lucide-react";
+import { Network, Link as LinkIcon, LogIn, LogOut, Copy, Power, Plus, Trash2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -135,6 +135,22 @@ export default function BotManagementPage() {
     onError: (error: any) => {
       toast({ 
         title: "Failed to leave club", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Delete bot mutation
+  const deleteMutation = useMutation({
+    mutationFn: (botId: string) => apiRequest('DELETE', `/api/bots/${botId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bots'] });
+      toast({ title: "Bot deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to delete bot", 
         description: error.message,
         variant: "destructive" 
       });
@@ -586,6 +602,22 @@ export default function BotManagementPage() {
                             </Button>
                           </>
                         )}
+                        
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (confirm(`Delete bot "${bot.name}"? This action cannot be undone.`)) {
+                              deleteMutation.mutate(bot.botId);
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                          className="flex-1 sm:flex-none text-xs h-8 text-destructive hover:text-destructive"
+                          data-testid={`button-delete-bot-${bot.botId}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
                       </div>
                     </div>
                   </CardContent>

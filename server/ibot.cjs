@@ -1065,6 +1065,18 @@ app.post('/api/bots/:botId/disconnect', (req, res) => {
     }
 });
 
+// Delete single bot
+app.delete('/api/bots/:botId', async (req, res) => {
+    try {
+        const { botId } = req.params;
+        const result = await connectionManager.deleteBot(botId);
+        res.json(result);
+    } catch (error) {
+        Logger.error(`Delete bot error: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Get pending auth prompts
 app.get('/api/bots/auth/prompts', (req, res) => {
     try {
