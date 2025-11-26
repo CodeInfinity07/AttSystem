@@ -11,70 +11,70 @@
   --opaque-button-border-intensity: -8; /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(220,20,60, .05);
+  --elevate-2: rgba(220,20,60, .12);
 
   --background: 0 0% 100%;
 
-  --foreground: 222 47% 11%;
+  --foreground: 0 0% 20%;
 
-  --border: 214 32% 91%;
+  --border: 0 70% 88%;
 
   --card: 0 0% 98%;
 
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 0 0% 15%;
 
-  --card-border: 214 32% 91%;
+  --card-border: 0 70% 85%;
 
-  --sidebar: 0 0% 96%;
+  --sidebar: 0 0% 94%;
 
-  --sidebar-foreground: 222 47% 11%;
+  --sidebar-foreground: 0 0% 15%;
 
-  --sidebar-border: 214 32% 88%;
+  --sidebar-border: 0 70% 80%;
 
-  --sidebar-primary: 221 83% 53%;
+  --sidebar-primary: 0 100% 50%;
 
-  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 220 13% 91%;
+  --sidebar-accent: 0 70% 88%;
 
-  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-accent-foreground: 0 0% 15%;
 
-  --sidebar-ring: 221 83% 53%;
+  --sidebar-ring: 0 100% 50%;
 
-  --popover: 0 0% 94%;
+  --popover: 0 0% 92%;
 
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 0 0% 15%;
 
-  --popover-border: 214 32% 86%;
+  --popover-border: 0 70% 82%;
 
-  --primary: 221 83% 53%;
+  --primary: 0 100% 50%;
 
-  --primary-foreground: 210 40% 98%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 13% 88%;
+  --secondary: 0 70% 85%;
 
-  --secondary-foreground: 222 47% 11%;
+  --secondary-foreground: 0 0% 15%;
 
-  --muted: 220 13% 91%;
+  --muted: 0 70% 88%;
 
-  --muted-foreground: 215 16% 47%;
+  --muted-foreground: 0 0% 45%;
 
-  --accent: 189 94% 43%;
+  --accent: 0 100% 48%;
 
-  --accent-foreground: 189 94% 15%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 100% 50%;
 
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --input: 214 32% 80%;
-  --ring: 221 83% 53%;
-  --chart-1: 221 83% 45%;
-  --chart-2: 142 76% 36%;
-  --chart-3: 262 83% 50%;
-  --chart-4: 38 92% 50%;
-  --chart-5: 189 94% 43%;
+  --input: 0 70% 80%;
+  --ring: 0 100% 50%;
+  --chart-1: 0 100% 48%;
+  --chart-2: 0 85% 45%;
+  --chart-3: 0 90% 55%;
+  --chart-4: 0 95% 52%;
+  --chart-5: 0 100% 50%;
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', sans-serif;
   --font-serif: Georgia, serif;
@@ -123,76 +123,76 @@
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,50,50, .15);
+  --badge-outline: rgba(255,50,50, .08);
 
   --opaque-button-border-intensity: 9;  /* In terms of percentages */
 
   /* Backgrounds applied on top of other backgrounds when hovered/active */
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,50,50, .08);
+  --elevate-2: rgba(255,50,50, .15);
 
-  --background: 222 47% 7%;
+  --background: 0 0% 8%;
 
-  --foreground: 210 20% 98%;
+  --foreground: 0 0% 95%;
 
-  --border: 215 15% 20%;
+  --border: 0 60% 25%;
 
-  --card: 215 25% 12%;
+  --card: 0 50% 12%;
 
-  --card-foreground: 210 20% 98%;
+  --card-foreground: 0 0% 95%;
 
-  --card-border: 215 15% 16%;
+  --card-border: 0 60% 20%;
 
-  --sidebar: 215 20% 10%;
+  --sidebar: 0 40% 10%;
 
-  --sidebar-foreground: 210 20% 98%;
+  --sidebar-foreground: 0 0% 95%;
 
-  --sidebar-border: 215 15% 14%;
+  --sidebar-border: 0 60% 18%;
 
-  --sidebar-primary: 221 83% 53%;
+  --sidebar-primary: 0 100% 55%;
 
-  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 215 20% 18%;
+  --sidebar-accent: 0 50% 20%;
 
-  --sidebar-accent-foreground: 210 20% 98%;
+  --sidebar-accent-foreground: 0 0% 95%;
 
-  --sidebar-ring: 221 83% 53%;
+  --sidebar-ring: 0 100% 55%;
 
-  --popover: 215 20% 15%;
+  --popover: 0 40% 15%;
 
-  --popover-foreground: 210 20% 98%;
+  --popover-foreground: 0 0% 95%;
 
-  --popover-border: 215 15% 19%;
+  --popover-border: 0 60% 22%;
 
-  --primary: 221 83% 53%;
+  --primary: 0 100% 55%;
 
-  --primary-foreground: 210 40% 98%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 215 20% 20%;
+  --secondary: 0 50% 22%;
 
-  --secondary-foreground: 210 20% 98%;
+  --secondary-foreground: 0 0% 95%;
 
-  --muted: 215 20% 18%;
+  --muted: 0 50% 20%;
 
-  --muted-foreground: 215 16% 65%;
+  --muted-foreground: 0 0% 70%;
 
-  --accent: 189 94% 43%;
+  --accent: 0 100% 58%;
 
-  --accent-foreground: 210 20% 98%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 100% 55%;
 
-  --destructive-foreground: 0 0% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --input: 215 15% 30%;
-  --ring: 221 83% 53%;
-  --chart-1: 221 83% 60%;
-  --chart-2: 142 76% 45%;
-  --chart-3: 262 83% 65%;
-  --chart-4: 38 92% 55%;
-  --chart-5: 189 94% 50%;
+  --input: 0 60% 28%;
+  --ring: 0 100% 55%;
+  --chart-1: 0 100% 58%;
+  --chart-2: 0 85% 50%;
+  --chart-3: 0 90% 60%;
+  --chart-4: 0 95% 55%;
+  --chart-5: 0 100% 55%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.3);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.4), 0px 1px 2px 0px hsl(0 0% 0% / 0.3);
