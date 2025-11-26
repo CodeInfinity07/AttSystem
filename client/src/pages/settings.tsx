@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -23,9 +23,11 @@ export default function SettingsPage() {
   });
 
   // Update local state when data loads
-  if (messagesResponse?.messages !== undefined && !messagesText) {
-    setMessagesText(messagesResponse.messages.join('\n'));
-  }
+  useEffect(() => {
+    if (messagesResponse?.messages !== undefined && !messagesText) {
+      setMessagesText(messagesResponse.messages.join('\n'));
+    }
+  }, [messagesResponse?.messages]);
 
   const saveMutation = useMutation({
     mutationFn: () => {
