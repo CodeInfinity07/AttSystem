@@ -729,10 +729,23 @@ const MessageTask = {
         TaskState.message.failed = 0;
         TaskState.message.completedBots.clear();
 
-        Logger.info(`Starting message task for ${botIds.length} bots`);
+        Logger.info(`Starting message task for ${botIds.length} bots with club code: ${CONFIG.CLUB_CODE}`);
 
         for (const botId of botIds) {
             if (!TaskState.message.isRunning) break;
+
+            // Join club first
+            const connection = connectionManager.getConnection(botId);
+            if (connection) {
+                const joinSuccess = connection.joinClub(CONFIG.CLUB_CODE);
+                if (!joinSuccess) {
+                    Logger.warn(`Failed to join club ${CONFIG.CLUB_CODE} for bot ${botId}`);
+                    TaskState.message.failed++;
+                    await Utils.delay(CONFIG.DELAYS.BETWEEN_BOTS);
+                    continue;
+                }
+                await Utils.delay(1000); // Wait for club join to process
+            }
 
             const result = await this.sendMessages(botId);
             
@@ -1129,12 +1142,18 @@ app.post('/api/bots/bulk/disconnect', (req, res) => {
 
 // Message task
 app.get('/api/tasks/message/status', (req, res) => {
-    res.json({ success: true, status: TaskState.message });
+    const stats = connectionManager.getStats();
+    const taskStatus = {
+        ...TaskState.message,
+        connectedBots: stats.connected,
+        totalBots: stats.totalBots
+    };
+    res.json({ success: true, taskStatus });
 });
 
 app.post('/api/tasks/message/start', async (req, res) => {
     try {
-        const { botIds } = req.body;
+        const { botIds, clubCode } = req.body;
         
         let botsToUse = botIds;
         
@@ -1145,6 +1164,10 @@ app.post('/api/tasks/message/start', async (req, res) => {
             if (botsToUse.length === 0) {
                 return res.json({ success: false, message: 'No connected bots available' });
             }
+        }
+
+        if (clubCode) {
+            CONFIG.CLUB_CODE = parseInt(clubCode);
         }
 
         res.json({ success: true, message: `Starting message task for ${botsToUse.length} bots` });
