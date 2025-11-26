@@ -27,7 +27,7 @@ const CONFIG = {
         BETWEEN_MESSAGES: 500,
         RETRY_DELAY: 3000,
         KEEPALIVE_INTERVAL: 15000,
-        BETWEEN_BOTS: 1000
+        BETWEEN_BOTS: 100
     },
 
     MESSAGE_SETTINGS: {
@@ -766,7 +766,7 @@ const MessageTask = {
         }
 
         // Wait for all club joins to complete
-        await Utils.delay(2000);
+        await Utils.delay(1000);
         Logger.success(`Phase 1 complete: ${joinedBots.length} bots ready to send messages`);
 
         // Phase 2: Round-robin message sending
