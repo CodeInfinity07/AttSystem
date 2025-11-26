@@ -760,6 +760,8 @@ const MessageTask = {
 
             const connection = connectionManager.getConnection(botId);
             if (connection) {
+                // Reset SQ to 2 when starting
+                connection.sequenceNumber = 2;
                 const joinSuccess = connection.joinClub(CONFIG.CLUB_CODE);
                 if (joinSuccess) {
                     joinedBots.push(botId);
@@ -776,27 +778,21 @@ const MessageTask = {
         await Utils.delay(1000);
         Logger.success(`Phase 1 complete: ${joinedBots.length} bots ready to send messages`);
 
-        // Phase 2: Round-robin message sending
+        // Phase 2: Round-robin message sending (indefinite until stopped)
         Logger.info(`Phase 2: Starting round-robin message sending from ${joinedBots.length} bots`);
         
-        // Track message count for each bot (SQ maintained separately)
+        // Track message count for each bot for status reporting
         const botMessageCounts = {};
         joinedBots.forEach(botId => {
             botMessageCounts[botId] = 0;
         });
 
-        // Send messages in round-robin until all bots reach TOTAL_MESSAGES
+        // Send messages in round-robin indefinitely until stopped
         let totalMessagesSent = 0;
-        const totalMessagesNeeded = joinedBots.length * CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES;
 
-        while (totalMessagesSent < totalMessagesNeeded && TaskState.message.isRunning) {
+        while (TaskState.message.isRunning) {
             for (const botId of joinedBots) {
                 if (!TaskState.message.isRunning) break;
-
-                // Check if this bot has already sent enough messages
-                if (botMessageCounts[botId] >= CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES) {
-                    continue;
-                }
 
                 // Send one message from this bot
                 const result = await this.sendSingleMessage(botId);
@@ -804,7 +800,7 @@ const MessageTask = {
                 if (result.success) {
                     botMessageCounts[botId]++;
                     totalMessagesSent++;
-                    Logger.info(`Bot ${botId}: message ${botMessageCounts[botId]}/${CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES} sent (Total: ${totalMessagesSent}/${totalMessagesNeeded})`);
+                    Logger.info(`Bot ${botId}: message ${botMessageCounts[botId]} sent (Total: ${totalMessagesSent})`);
                 } else {
                     Logger.warn(`Bot ${botId}: failed to send message - ${result.error}`);
                 }
@@ -813,18 +809,7 @@ const MessageTask = {
             }
         }
 
-        // Count completed bots (those that sent all messages)
-        for (const botId of joinedBots) {
-            if (botMessageCounts[botId] >= CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES) {
-                TaskState.message.completed++;
-                TaskState.message.completedBots.add(botId);
-            } else {
-                TaskState.message.failed++;
-            }
-        }
-
-        TaskState.message.isRunning = false;
-        Logger.success(`Message task completed: ${TaskState.message.completed} successful, ${TaskState.message.failed} failed. Total messages: ${totalMessagesSent}/${totalMessagesNeeded}`);
+        Logger.success(`Message task stopped. Total messages sent: ${totalMessagesSent}`);
 
         // Save results
         await this.saveResults();
@@ -852,9 +837,26 @@ const MessageTask = {
         }
     },
 
-    stop() {
+    async stop() {
+        if (!TaskState.message.isRunning) {
+            Logger.info('Message task was not running');
+            return;
+        }
+
         TaskState.message.isRunning = false;
-        Logger.info('Message task stopped');
+        Logger.info('Message task stop initiated - making all bots leave club');
+
+        // Make all connected bots leave the club
+        const allBots = Array.from(connectionManager.bots.values());
+        for (const bot of allBots) {
+            if (bot.isInClub) {
+                bot.leaveClub();
+                Logger.info(`Bot ${bot.bot.id} leaving club`);
+                await Utils.delay(100);
+            }
+        }
+
+        Logger.success('All bots left club - Message task stopped');
     }
 };
 
@@ -1279,8 +1281,8 @@ app.post('/api/tasks/message/start', async (req, res) => {
     }
 });
 
-app.post('/api/tasks/message/stop', (req, res) => {
-    MessageTask.stop();
+app.post('/api/tasks/message/stop', async (req, res) => {
+    await MessageTask.stop();
     res.json({ success: true, message: 'Message task stopped' });
 });
 
