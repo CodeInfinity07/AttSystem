@@ -336,15 +336,29 @@ class BotConnection extends EventEmitter {
 
         // Handle club join responses
         if (msg.PU === "CJA" || msg.PU === "REA") {
-            this.isInClub = true;
-            
-            // Clear join timeout
-            if (this.timeouts.has('clubJoin')) {
-                clearTimeout(this.timeouts.get('clubJoin'));
-                this.timeouts.delete('clubJoin');
+            // Check if there's an error in the response
+            if (msg.PY?.hasOwnProperty('ER')) {
+                Logger.error(`Bot ${this.bot.name} failed to join club: ${msg.PY.ER}`);
+                this.isInClub = false;
+                
+                // Clear join timeout
+                if (this.timeouts.has('clubJoin')) {
+                    clearTimeout(this.timeouts.get('clubJoin'));
+                    this.timeouts.delete('clubJoin');
+                }
+                
+                this.emit('clubJoinFailed', msg.PY.ER);
+            } else {
+                this.isInClub = true;
+                
+                // Clear join timeout
+                if (this.timeouts.has('clubJoin')) {
+                    clearTimeout(this.timeouts.get('clubJoin'));
+                    this.timeouts.delete('clubJoin');
+                }
+                
+                this.emit('clubJoined');
             }
-            
-            this.emit('clubJoined');
         }
 
         this.emit('message', msg);
@@ -776,14 +790,27 @@ const MessageTask = {
 
         // Wait for all club joins to complete
         await Utils.delay(1000);
-        Logger.success(`Phase 1 complete: ${joinedBots.length} bots ready to send messages`);
+        
+        // Filter out bots that failed to join (those with isInClub = false)
+        const actuallyJoinedBots = joinedBots.filter(botId => {
+            const connection = connectionManager.getConnection(botId);
+            return connection && connection.isInClub === true;
+        });
+        
+        Logger.success(`Phase 1 complete: ${actuallyJoinedBots.length} out of ${joinedBots.length} bots successfully joined and ready to send messages`);
+        
+        if (actuallyJoinedBots.length === 0) {
+            Logger.error('No bots successfully joined the club. Task terminating.');
+            TaskState.message.isRunning = false;
+            return { success: false, message: 'No bots successfully joined the club' };
+        }
 
         // Phase 2: Round-robin message sending (indefinite until stopped)
-        Logger.info(`Phase 2: Starting round-robin message sending from ${joinedBots.length} bots`);
+        Logger.info(`Phase 2: Starting round-robin message sending from ${actuallyJoinedBots.length} bots`);
         
         // Track message count for each bot for status reporting
         const botMessageCounts = {};
-        joinedBots.forEach(botId => {
+        actuallyJoinedBots.forEach(botId => {
             botMessageCounts[botId] = 0;
         });
 
@@ -791,7 +818,7 @@ const MessageTask = {
         let totalMessagesSent = 0;
 
         while (TaskState.message.isRunning) {
-            for (const botId of joinedBots) {
+            for (const botId of actuallyJoinedBots) {
                 if (!TaskState.message.isRunning) break;
 
                 // Send one message from this bot
