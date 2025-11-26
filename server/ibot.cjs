@@ -1334,9 +1334,11 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('uncaughtException', (error) => {
     Logger.error(`Uncaught Exception: ${error.message}`);
-    console.error(error.stack);
-    shutdown('uncaughtException');
+    Logger.debug(error.stack);
+    // Log error but don't shut down - let individual bots handle their own errors
+    // Only disconnect the specific bot that failed, not all of them
 });
 process.on('unhandledRejection', (reason, promise) => {
     Logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`);
+    // Log rejection but continue running - don't shut down the entire system
 });
