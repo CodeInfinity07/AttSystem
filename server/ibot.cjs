@@ -668,52 +668,29 @@ const TaskState = {
 
 // ==================== MESSAGE TASK ====================
 const MessageTask = {
-    async sendMessages(botId) {
+    async sendSingleMessage(botId) {
         const connection = connectionManager.getConnection(botId);
         if (!connection) {
             return { success: false, error: 'Bot not connected' };
         }
 
         return new Promise((resolve) => {
-            let messageCount = 0;
-            let messageInterval = null;
-
             const timeout = setTimeout(() => {
-                if (messageInterval) clearInterval(messageInterval);
-                resolve({ success: false, error: 'Timeout', messagesSent: messageCount });
-            }, CONFIG.TIMEOUTS.MESSAGE_TASK);
+                resolve({ success: false, error: 'Timeout' });
+            }, 5000); // 5 second timeout per message
 
-            const startSending = () => {
-                messageInterval = setInterval(() => {
-                    if (!TaskState.message.isRunning) {
-                        clearInterval(messageInterval);
-                        clearTimeout(timeout);
-                        resolve({ success: false, error: 'Task stopped', messagesSent: messageCount });
-                        return;
-                    }
-
-                    if (connection.sendClubMessage(messageCount.toString())) {
-                        messageCount++;
-                        Logger.debug(`Bot ${botId} sent message ${messageCount}/${CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES}`);
-
-                        if (messageCount >= CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES) {
-                            clearInterval(messageInterval);
-                            clearTimeout(timeout);
-                            resolve({ success: true, messagesSent: messageCount });
-                        }
-                    } else {
-                        clearInterval(messageInterval);
-                        clearTimeout(timeout);
-                        resolve({ success: false, error: 'Failed to send', messagesSent: messageCount });
-                    }
-                }, CONFIG.DELAYS.BETWEEN_MESSAGES);
-            };
-
-            if (!connection.isInClub) {
-                connection.joinClub(CONFIG.CLUB_CODE);
-                connection.once('clubJoined', startSending);
-            } else {
-                startSending();
+            try {
+                if (connection.sendClubMessage('1')) {
+                    clearTimeout(timeout);
+                    Logger.debug(`Bot ${botId} sent message`);
+                    resolve({ success: true });
+                } else {
+                    clearTimeout(timeout);
+                    resolve({ success: false, error: 'Failed to send' });
+                }
+            } catch (error) {
+                clearTimeout(timeout);
+                resolve({ success: false, error: error.message });
             }
         });
     },
@@ -756,28 +733,55 @@ const MessageTask = {
         await Utils.delay(2000);
         Logger.success(`Phase 1 complete: ${joinedBots.length} bots ready to send messages`);
 
-        // Phase 2: All bots send messages in sequence
-        Logger.info(`Phase 2: Starting message sending from ${joinedBots.length} bots`);
+        // Phase 2: Round-robin message sending
+        Logger.info(`Phase 2: Starting round-robin message sending from ${joinedBots.length} bots`);
         
-        for (const botId of joinedBots) {
-            if (!TaskState.message.isRunning) break;
+        // Track message count for each bot (SQ maintained separately)
+        const botMessageCounts = {};
+        joinedBots.forEach(botId => {
+            botMessageCounts[botId] = 0;
+        });
 
-            const result = await this.sendMessages(botId);
-            
-            if (result.success) {
+        // Send messages in round-robin until all bots reach TOTAL_MESSAGES
+        let totalMessagesSent = 0;
+        const totalMessagesNeeded = joinedBots.length * CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES;
+
+        while (totalMessagesSent < totalMessagesNeeded && TaskState.message.isRunning) {
+            for (const botId of joinedBots) {
+                if (!TaskState.message.isRunning) break;
+
+                // Check if this bot has already sent enough messages
+                if (botMessageCounts[botId] >= CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES) {
+                    continue;
+                }
+
+                // Send one message from this bot
+                const result = await this.sendSingleMessage(botId);
+                
+                if (result.success) {
+                    botMessageCounts[botId]++;
+                    totalMessagesSent++;
+                    Logger.info(`Bot ${botId}: message ${botMessageCounts[botId]}/${CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES} sent (Total: ${totalMessagesSent}/${totalMessagesNeeded})`);
+                } else {
+                    Logger.warn(`Bot ${botId}: failed to send message - ${result.error}`);
+                }
+
+                await Utils.delay(CONFIG.DELAYS.BETWEEN_MESSAGES);
+            }
+        }
+
+        // Count completed bots (those that sent all messages)
+        for (const botId of joinedBots) {
+            if (botMessageCounts[botId] >= CONFIG.MESSAGE_SETTINGS.TOTAL_MESSAGES) {
                 TaskState.message.completed++;
                 TaskState.message.completedBots.add(botId);
-                Logger.success(`Message task completed for ${botId}`);
             } else {
                 TaskState.message.failed++;
-                Logger.error(`Message task failed for ${botId}: ${result.error}`);
             }
-
-            await Utils.delay(CONFIG.DELAYS.BETWEEN_BOTS);
         }
 
         TaskState.message.isRunning = false;
-        Logger.success(`Message task completed: ${TaskState.message.completed} successful, ${TaskState.message.failed} failed`);
+        Logger.success(`Message task completed: ${TaskState.message.completed} successful, ${TaskState.message.failed} failed. Total messages: ${totalMessagesSent}/${totalMessagesNeeded}`);
 
         // Save results
         await this.saveResults();
