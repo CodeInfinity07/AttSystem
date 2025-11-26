@@ -1,0 +1,69 @@
+9|AttSystem  | [INFO] 2025-11-26T07:52:34.295Z - [AUTH_PROMPT] Storing auth prompt with botId: bot_XPVJ5561
+9|AttSystem  | [INFO] 2025-11-26T07:52:34.295Z - [AUTH_PROMPT] Auth prompts now: bot_XPVJ5561
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | [INFO] 2025-11-26T07:52:38.887Z - Connected bots: 2/5
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | [INFO] 2025-11-26T07:52:46.883Z - [AUTH_TOKEN] Received auth token request for botId: bot_XPVJ5561
+9|AttSystem  | [INFO] 2025-11-26T07:52:46.885Z - [AUTH_TOKEN] Available connections: bot_SAQL9597, bot_XPVJ5561
+9|AttSystem  | [INFO] 2025-11-26T07:52:46.885Z - [AUTH_TOKEN] Available auth prompts: bot_XPVJ5561
+9|AttSystem  | [INFO] 2025-11-26T07:52:46.885Z - [AUTH_TOKEN] Found connection for bot_XPVJ5561, sending token
+9|AttSystem  | [DEBUG] 2025-11-26T07:52:46.888Z - Sent raw message for Saqlain Abbas
+9|AttSystem  | { RH: 'AUA', PU: '', PY: {} }
+9|AttSystem  | [SUCCESS] 2025-11-26T07:52:47.087Z - Bot Saqlain Abbas authenticated via AUA
+9|AttSystem  | [SUCCESS] 2025-11-26T07:52:47.087Z - Bot Saqlain Abbas connected successfully with botId: bot_XPVJ5561
+9|AttSystem  | [INFO] 2025-11-26T07:52:47.087Z - [CONNECT] Result: {"success":true,"botId":"bot_XPVJ5561"}
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | [INFO] 2025-11-26T07:53:38.890Z - Connected bots: 2/5
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | [INFO] 2025-11-26T07:53:48.870Z - [CONNECT] Received request to connect bot: bot_MJUL6435
+9|AttSystem  | [INFO] 2025-11-26T07:53:48.870Z - [connectBot] Starting with botId: bot_MJUL6435
+9|AttSystem  | [INFO] 2025-11-26T07:53:48.870Z - [connectBot] Creating BotConnection for Nida Ch with botId: bot_MJUL6435
+9|AttSystem  | [INFO] 2025-11-26T07:53:48.870Z - [connectBot] BotConnection created, connection.botId = bot_MJUL6435
+9|AttSystem  | [INFO] 2025-11-26T07:53:48.871Z - [connectBot] Connection added to map immediately. Connections now: bot_SAQL9597, bot_XPVJ5561, bot_MJUL6435
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | { RH: 'hb', PU: '', PY: {} }
+9|AttSystem  | [INFO] 2025-11-26T07:53:59.436Z - Bot Nida Ch disconnected
+9|AttSystem  | [ERROR] 2025-11-26T07:53:59.461Z - Uncaught Exception: WebSocket was closed before the connection was established
+9|AttSystem  | Error: WebSocket was closed before the connection was established
+9|AttSystem  |     at WebSocket.terminate (/var/www/AttSystem/node_modules/ws/lib/websocket.js:489:7)
+9|AttSystem  |     at BotConnection.disconnect (/var/www/AttSystem/server/ibot.cjs:484:21)
+9|AttSystem  |     at PersistentConnectionManager.disconnectBot (/var/www/AttSystem/server/ibot.cjs:594:20)
+9|AttSystem  |     at /var/www/AttSystem/server/ibot.cjs:1024:42
+9|AttSystem  |     at Layer.handle [as handle_request] (/var/www/AttSystem/node_modules/express/lib/router/layer.js:95:5)
+9|AttSystem  |     at next (/var/www/AttSystem/node_modules/express/lib/router/route.js:149:13)
+9|AttSystem  |     at Route.dispatch (/var/www/AttSystem/node_modules/express/lib/router/route.js:119:3)
+9|AttSystem  |     at Layer.handle [as handle_request] (/var/www/AttSystem/node_modules/express/lib/router/layer.js:95:5)
+9|AttSystem  |     at /var/www/AttSystem/node_modules/express/lib/router/index.js:284:15
+9|AttSystem  |     at param (/var/www/AttSystem/node_modules/express/lib/router/index.js:365:14)
+9|AttSystem  | [INFO] 2025-11-26T07:53:59.472Z - Received uncaughtException, shutting down gracefully...
+9|AttSystem  | [INFO] 2025-11-26T07:53:59.472Z - Message task stopped
+9|AttSystem  | [INFO] 2025-11-26T07:53:59.473Z - All bots disconnected
+9|AttSystem  | [SUCCESS] 2025-11-26T07:53:59.473Z - Shutdown completed
+9|AttSystem  | Bot server exited with code 0

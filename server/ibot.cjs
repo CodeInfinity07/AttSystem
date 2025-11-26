@@ -481,7 +481,14 @@ class BotConnection extends EventEmitter {
 
         if (this.ws) {
             this.ws.removeAllListeners();
-            this.ws.terminate();
+            try {
+                // Only terminate if the websocket is in a state where it can be terminated
+                if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+                    this.ws.terminate();
+                }
+            } catch (error) {
+                Logger.debug(`Error terminating WebSocket: ${error.message}`);
+            }
             this.ws = null;
         }
 
