@@ -875,15 +875,25 @@ const MessageTask = {
 
         // Make all connected bots leave the club
         const allBots = Array.from(connectionManager.bots.values());
+        let leftCount = 0;
+        
         for (const bot of allBots) {
             if (bot.isInClub) {
-                bot.leaveClub();
-                Logger.info(`Bot ${bot.bot.id} leaving club`);
-                await Utils.delay(100);
+                const success = bot.leaveClub();
+                if (success) {
+                    Logger.info(`Bot ${bot.bot.name} sent leave club request`);
+                    leftCount++;
+                } else {
+                    Logger.warn(`Bot ${bot.bot.name} failed to send leave club request (WebSocket may be closed)`);
+                }
+                await Utils.delay(150);
             }
         }
 
-        Logger.success('All bots left club - Message task stopped');
+        // Wait longer to allow server to process all leave requests
+        await Utils.delay(2000);
+        
+        Logger.success(`Message task stopped - ${leftCount} bots sent leave club requests`);
     }
 };
 
