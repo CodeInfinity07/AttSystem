@@ -730,7 +730,8 @@ const TaskState = {
         total: 0,
         completed: 0,
         failed: 0,
-        completedBots: new Set()
+        completedBots: new Set(),
+        joinedBots: [] // Track which bots successfully joined for use in stop()
     }
 };
 
@@ -775,6 +776,7 @@ const MessageTask = {
         TaskState.message.completed = 0;
         TaskState.message.failed = 0;
         TaskState.message.completedBots.clear();
+        TaskState.message.joinedBots = []; // Clear for new task
 
         Logger.info(`Starting message task for ${botIds.length} bots with club code: ${CONFIG.CLUB_CODE}`);
 
@@ -809,6 +811,10 @@ const MessageTask = {
             const connection = connectionManager.getConnection(botId);
             return connection && connection.isInClub === true;
         });
+        
+        // Store joined bots in TaskState for stop() to use
+        TaskState.message.joinedBots = actuallyJoinedBots;
+        Logger.info(`Stored ${actuallyJoinedBots.length} joined bots in TaskState for stop() function`);
         
         Logger.success(`Phase 1 complete: ${actuallyJoinedBots.length} out of ${joinedBots.length} bots successfully joined and ready to send messages`);
         
@@ -884,29 +890,36 @@ const MessageTask = {
         }
 
         TaskState.message.isRunning = false;
-        Logger.info('Message task stop initiated - making all bots leave club');
+        Logger.info(`Message task stop initiated - making ${TaskState.message.joinedBots.length} bots leave club`);
 
-        // Make all connected bots leave the club
-        const allBots = Array.from(connectionManager.bots.values());
+        // Use the stored list of bots that successfully joined
+        const botsToLeave = TaskState.message.joinedBots || [];
         let leftCount = 0;
         
-        for (const bot of allBots) {
-            if (bot.isInClub) {
-                const success = bot.leaveClub();
-                if (success) {
-                    Logger.info(`Bot ${bot.bot.name} sent leave club request`);
-                    leftCount++;
-                } else {
-                    Logger.warn(`Bot ${bot.bot.name} failed to send leave club request (WebSocket may be closed)`);
-                }
-                await Utils.delay(150);
+        Logger.info(`Found ${botsToLeave.length} bots in TaskState.message.joinedBots to leave`);
+        
+        for (const botId of botsToLeave) {
+            const bot = connectionManager.getConnection(botId);
+            if (!bot) {
+                Logger.warn(`Bot ${botId} not found in connection manager`);
+                continue;
             }
+            
+            Logger.info(`Attempting to leave club for bot ${botId} (${bot.bot.name})`);
+            const success = bot.leaveClub();
+            if (success) {
+                Logger.info(`Bot ${botId} (${bot.bot.name}) sent leave club request`);
+                leftCount++;
+            } else {
+                Logger.warn(`Bot ${botId} (${bot.bot.name}) failed to send leave club request`);
+            }
+            await Utils.delay(150);
         }
 
         // Wait longer to allow server to process all leave requests
         await Utils.delay(2000);
         
-        Logger.success(`Message task stopped - ${leftCount} bots sent leave club requests`);
+        Logger.success(`Message task stopped - ${leftCount} out of ${botsToLeave.length} bots sent leave club requests`);
     }
 };
 
