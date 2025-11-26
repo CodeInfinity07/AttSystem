@@ -872,6 +872,106 @@ app.post('/api/bots/reload', async (req, res) => {
     }
 });
 
+// Import bots
+app.post('/api/bots/import', async (req, res) => {
+    try {
+        const { botStrings } = req.body;
+        
+        if (!Array.isArray(botStrings) || botStrings.length === 0) {
+            return res.json({ success: false, message: 'No bot strings provided' });
+        }
+
+        const existingBots = await FileManager.loadBots();
+        const existingGcs = new Set(existingBots.map(b => b.gc));
+        let added = 0;
+        let skipped = 0;
+
+        for (const botString of botStrings) {
+            try {
+                const parts = botString.trim().split(',');
+                if (parts.length < 4) {
+                    Logger.warn(`Invalid bot format: ${botString}`);
+                    skipped++;
+                    continue;
+                }
+
+                const [base64Str, ui, gc, ...nameParts] = parts;
+                const name = nameParts.join(',').trim();
+
+                // Check if bot already exists
+                if (existingGcs.has(gc)) {
+                    Logger.warn(`Bot with GC ${gc} already exists, skipping`);
+                    skipped++;
+                    continue;
+                }
+
+                // Decode base64 to get the JSON
+                const jsonString = Buffer.from(base64Str.trim(), 'base64').toString('utf-8');
+                const decodedData = JSON.parse(jsonString);
+
+                // Extract KEY and EP from nested PY field
+                let key, ep;
+                if (decodedData.PY) {
+                    try {
+                        const pyData = typeof decodedData.PY === 'string' 
+                            ? JSON.parse(decodedData.PY) 
+                            : decodedData.PY;
+                        key = pyData.KEY;
+                        ep = pyData.EP;
+                    } catch (pyError) {
+                        Logger.warn(`Failed to parse PY field for ${gc}: ${pyError.message}`);
+                        skipped++;
+                        continue;
+                    }
+                }
+
+                if (!key || !ep) {
+                    Logger.warn(`Missing KEY or EP for bot ${gc}`);
+                    skipped++;
+                    continue;
+                }
+
+                // Create bot object
+                const newBot = {
+                    name: name || `Bot_${gc}`,
+                    key,
+                    ep,
+                    gc,
+                    ui
+                };
+
+                // Add to file
+                existingBots.push(newBot);
+                existingGcs.add(gc);
+                added++;
+
+                Logger.success(`Imported bot: ${newBot.name} (${gc})`);
+            } catch (error) {
+                Logger.error(`Failed to parse bot string: ${error.message}`);
+                skipped++;
+            }
+        }
+
+        // Save updated bots to file
+        if (added > 0) {
+            await FileManager.saveBots(existingBots);
+            
+            // Reload bots in connection manager
+            await connectionManager.reloadBots();
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Added ${added} bot(s)`,
+            added,
+            skipped
+        });
+    } catch (error) {
+        Logger.error(`Import bots error: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Connect single bot
 app.post('/api/bots/:botId/connect', async (req, res) => {
     try {
