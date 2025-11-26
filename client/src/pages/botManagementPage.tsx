@@ -47,6 +47,9 @@ export default function BotManagementPage() {
   const [tokenInput, setTokenInput] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importText, setImportText] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [botToDelete, setBotToDelete] = useState<{ botId: string; name: string } | null>(null);
   
   // Fetch all bots with status
   const { data, isLoading, error } = useQuery<BotsResponse>({
@@ -446,6 +449,77 @@ export default function BotManagementPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Bot Password Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Bot: {botToDelete?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Enter the password to confirm deletion. This action cannot be undone.
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-password" className="text-xs font-semibold">Password</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                placeholder="Enter password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && deletePassword === 'aa00aa00' && botToDelete) {
+                    deleteMutation.mutate(botToDelete.botId);
+                    setDeleteModalOpen(false);
+                    setDeletePassword("");
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+                data-testid="input-delete-password"
+                className="h-9"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-3 border-t">
+            <Button
+              onClick={() => {
+                if (deletePassword === 'aa00aa00' && botToDelete) {
+                  deleteMutation.mutate(botToDelete.botId);
+                  setDeleteModalOpen(false);
+                  setDeletePassword("");
+                } else {
+                  toast({ 
+                    title: "Invalid password", 
+                    description: "Please enter the correct password",
+                    variant: "destructive" 
+                  });
+                }
+              }}
+              disabled={!deletePassword.trim() || deleteMutation.isPending || deletePassword !== 'aa00aa00'}
+              variant="destructive"
+              className="flex-1"
+              size="sm"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setDeletePassword("");
+              }}
+              disabled={deleteMutation.isPending}
+              className="flex-1"
+              size="sm"
+              data-testid="button-cancel-delete"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Filters and Search */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3 space-y-0">
@@ -607,9 +681,9 @@ export default function BotManagementPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            if (confirm(`Delete bot "${bot.name}"? This action cannot be undone.`)) {
-                              deleteMutation.mutate(bot.botId);
-                            }
+                            setBotToDelete({ botId: bot.botId, name: bot.name });
+                            setDeleteModalOpen(true);
+                            setDeletePassword("");
                           }}
                           disabled={deleteMutation.isPending}
                           className="flex-1 sm:flex-none text-xs h-8 text-destructive hover:text-destructive"
