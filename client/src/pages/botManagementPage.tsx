@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Network, Link as LinkIcon, LogIn, LogOut, Copy, Power } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Network, Link as LinkIcon, LogIn, LogOut, Copy, Power, Plus } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +45,8 @@ export default function BotManagementPage() {
   const [authPrompts, setAuthPrompts] = useState<AuthPrompt[]>([]);
   const [selectedAuthPrompt, setSelectedAuthPrompt] = useState<AuthPrompt | null>(null);
   const [tokenInput, setTokenInput] = useState("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importText, setImportText] = useState("");
   
   // Fetch all bots with status
   const { data, isLoading, error } = useQuery<BotsResponse>({
@@ -154,6 +157,23 @@ export default function BotManagementPage() {
     onError: (error: any) => {
       toast({ 
         title: "Failed to send token", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const importBotsMutation = useMutation({
+    mutationFn: (botStrings: string[]) => apiRequest('POST', '/api/bots/import', { botStrings }),
+    onSuccess: (data: any) => {
+      toast({ title: `Successfully added ${data.added} bot(s)` });
+      setImportText("");
+      setImportDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/bots'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to import bots", 
         description: error.message,
         variant: "destructive" 
       });
@@ -358,10 +378,68 @@ export default function BotManagementPage() {
         </CardContent>
       </Card>
 
+      {/* Import Bots Dialog */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh] w-[95vw]">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>Import Bots</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto min-w-0 space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Bot Data (one per line)</Label>
+              <Textarea
+                placeholder="Paste bot data: base64_string,ui,gc,name&#10;Example: eyJSSCI6ImpvIiwiUFU...,[ui],[gc],[name]"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                disabled={importBotsMutation.isPending}
+                data-testid="textarea-import-bots"
+                className="resize-none text-sm font-mono h-32"
+              />
+              <p className="text-xs text-muted-foreground">Each line should contain: base64_encoded_data,ui,gc,name</p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0 pt-3 border-t">
+            <Button
+              onClick={() => {
+                const lines = importText.trim().split('\n').filter(line => line.trim());
+                if (lines.length > 0) {
+                  importBotsMutation.mutate(lines);
+                }
+              }}
+              disabled={!importText.trim() || importBotsMutation.isPending}
+              className="flex-1"
+              size="sm"
+              data-testid="button-import-bots"
+            >
+              {importBotsMutation.isPending ? "Importing..." : `Import (${importText.trim().split('\n').filter(l => l.trim()).length})`}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImportDialogOpen(false)}
+              disabled={importBotsMutation.isPending}
+              className="flex-1"
+              size="sm"
+              data-testid="button-cancel-import"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Filters and Search */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle className="text-base font-semibold">Filters</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => setImportDialogOpen(true)}
+            data-testid="button-import-dialog"
+            className="gap-1"
+          >
+            <Plus className="h-3 w-3" />
+            <span>Add Bots</span>
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
