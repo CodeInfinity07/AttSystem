@@ -1183,7 +1183,30 @@ app.post('/api/tasks/message/stop', (req, res) => {
     res.json({ success: true, message: 'Message task stopped' });
 });
 
-// Mic task
+// Name Change task endpoints
+app.get('/api/name-change/status', (req, res) => {
+    const stats = connectionManager.getStats();
+    const nameChangeStatus = {
+        isRunning: false,
+        total: 0,
+        completed: 0,
+        failed: 0,
+        connectedBots: stats.connected,
+        totalBots: stats.totalBots,
+        results: []
+    };
+    res.json({ success: true, nameChangeStatus });
+});
+
+app.post('/api/name-change/start', (req, res) => {
+    const stats = connectionManager.getStats();
+    res.json({ success: true, message: 'Name change task started', botsAvailable: stats.connected });
+});
+
+app.post('/api/name-change/stop', (req, res) => {
+    res.json({ success: true, message: 'Name change task stopped' });
+});
+
 // Connection stats
 app.get('/api/connections/stats', (req, res) => {
     try {

@@ -22,13 +22,12 @@ interface NameChangeStatusResponse {
   success: boolean;
   nameChangeStatus: {
     isRunning: boolean;
-    totalEligible: number;
+    total: number;
     completed: number;
     failed: number;
-    processing: number;
-    namesList: string[];
+    connectedBots: number;
+    totalBots: number;
     results: NameChangeResult[];
-    eligibleBots: number;
   };
 }
 
@@ -81,11 +80,11 @@ export default function NameChangePage() {
 
   const isRunning = nameChangeStatus?.isRunning || false;
   const completed = nameChangeStatus?.completed || 0;
-  const processing = nameChangeStatus?.processing || 0;
   const failed = nameChangeStatus?.failed || 0;
-  const total = nameChangeStatus?.totalEligible || 0;
+  const total = nameChangeStatus?.total || 0;
+  const connectedBots = nameChangeStatus?.connectedBots || 0;
+  const totalBots = nameChangeStatus?.totalBots || 0;
   const results = nameChangeStatus?.results || [];
-  const eligibleCount = nameChangeStatus?.eligibleBots || 0;
   
   // Count names in textarea
   const namesList = names.split('\n')
@@ -156,7 +155,7 @@ export default function NameChangePage() {
         <div className="space-y-4">
           <ProgressCard
             completed={completed}
-            processing={processing}
+            processing={0}
             failed={failed}
             total={Math.max(total, 1)}
           />
@@ -166,7 +165,7 @@ export default function NameChangePage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-md bg-success/20 text-success">
                 <Info className="h-4 w-4" />
               </div>
-              <CardTitle className="text-base">Name Rotation</CardTitle>
+              <CardTitle className="text-base">Bot Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="rounded-md bg-muted p-3">
@@ -179,10 +178,18 @@ export default function NameChangePage() {
               </div>
               <div className="rounded-md bg-muted p-3">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  Eligible Bots
+                  Connected Bots
                 </div>
-                <div className="font-semibold font-mono" data-testid="text-eligible-count">
-                  {eligibleCount}
+                <div className="font-semibold font-mono" data-testid="text-connected-bots">
+                  {connectedBots}
+                </div>
+              </div>
+              <div className="rounded-md bg-muted p-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                  Total Bots
+                </div>
+                <div className="font-semibold font-mono" data-testid="text-total-bots">
+                  {totalBots}
                 </div>
               </div>
             </CardContent>
