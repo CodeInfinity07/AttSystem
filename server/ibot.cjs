@@ -691,6 +691,11 @@ const connectionManager = new PersistentConnectionManager();
 // ==================== AUTH PROMPTS STORAGE ====================
 const authPrompts = new Map(); // botId -> { botId, botName, message, timestamp }
 
+// ==================== SETTINGS STORAGE ====================
+let settings = {
+    messages: ['1'] // Default message if none configured
+};
+
 // ==================== TASK STATE ====================
 const TaskState = {
     message: {
@@ -716,9 +721,11 @@ const MessageTask = {
             }, 5000); // 5 second timeout per message
 
             try {
-                if (connection.sendClubMessage('1')) {
+                // Pick a random message from configured messages
+                const randomMessage = settings.messages[Math.floor(Math.random() * settings.messages.length)];
+                if (connection.sendClubMessage(randomMessage)) {
                     clearTimeout(timeout);
-                    Logger.debug(`Bot ${botId} sent message`);
+                    Logger.debug(`Bot ${botId} sent message: ${randomMessage}`);
                     resolve({ success: true });
                 } else {
                     clearTimeout(timeout);
@@ -1073,6 +1080,34 @@ app.delete('/api/bots/:botId', async (req, res) => {
         res.json(result);
     } catch (error) {
         Logger.error(`Delete bot error: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Get messages settings
+app.get('/api/settings/messages', (req, res) => {
+    try {
+        res.json({ success: true, messages: settings.messages });
+    } catch (error) {
+        Logger.error(`Get messages error: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Save messages settings
+app.post('/api/settings/messages', (req, res) => {
+    try {
+        const { messages } = req.body;
+        
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return res.json({ success: false, message: 'Messages must be a non-empty array' });
+        }
+        
+        settings.messages = messages;
+        Logger.success(`Messages updated: ${messages.length} message(s) configured`);
+        res.json({ success: true, message: 'Messages saved successfully', messages: settings.messages });
+    } catch (error) {
+        Logger.error(`Save messages error: ${error.message}`);
         res.status(500).json({ success: false, message: error.message });
     }
 });

@@ -1,4 +1,4 @@
-import { Bot, MessageSquare, UserCog, PlugZap } from "lucide-react";
+import { Bot, MessageSquare, UserCog, PlugZap, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -28,6 +28,11 @@ const items = [
     title: "Name Change",
     url: "/name-change",
     icon: UserCog,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
   },
 ];
 

@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import MessagesPage from "@/pages/messages";
 import NameChangePage from "@/pages/name-change";
+import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import BotManagementPage from "@/pages/botManagementPage";
 
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/bot-management" component={BotManagementPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route path="/name-change" component={NameChangePage} />
+      <Route path="/settings" component={SettingsPage} />
       <Route component={NotFound} />
     </Switch>
   );
