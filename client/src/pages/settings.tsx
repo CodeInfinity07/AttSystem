@@ -23,7 +23,7 @@ export default function SettingsPage() {
   });
 
   // Update local state when data loads
-  if (messagesResponse?.messages && !messagesText) {
+  if (messagesResponse?.messages !== undefined && !messagesText) {
     setMessagesText(messagesResponse.messages.join('\n'));
   }
 

@@ -693,7 +693,7 @@ const authPrompts = new Map(); // botId -> { botId, botName, message, timestamp 
 
 // ==================== SETTINGS STORAGE ====================
 let settings = {
-    messages: ['1'] // Default message if none configured
+    messages: [] // Empty by default
 };
 
 // ==================== TASK STATE ====================
