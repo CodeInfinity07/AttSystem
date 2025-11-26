@@ -1,12 +1,10 @@
 import { TaskControlCard } from "@/components/task-control-card";
-import { ProgressCard } from "@/components/progress-card";
 import { BotList } from "@/components/bot-list";
 import { MessageSquare } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Bot } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
@@ -111,13 +109,6 @@ export default function MessagesPage() {
           </div>
         </div>
       </div>
-
-      <ProgressCard
-        completed={completed}
-        processing={0}
-        failed={failed}
-        total={Math.max(total, 1)}
-      />
 
       <BotList
         title="Completed Bots"

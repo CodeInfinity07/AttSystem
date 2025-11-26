@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { TaskControlCard } from "@/components/task-control-card";
-import { ProgressCard } from "@/components/progress-card";
 import { BotList } from "@/components/bot-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -153,13 +152,6 @@ export default function NameChangePage() {
         </TaskControlCard>
 
         <div className="space-y-4">
-          <ProgressCard
-            completed={completed}
-            processing={0}
-            failed={failed}
-            total={Math.max(total, 1)}
-          />
-
           <Card>
             <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-md bg-success/20 text-success">
