@@ -153,13 +153,6 @@ const FileManager = {
 
     async saveBots(bots) {
         try {
-            const backup = `${CONFIG.BOTS_FILE}.backup.${Date.now()}`;
-            try {
-                await fs.copyFile(CONFIG.BOTS_FILE, backup);
-                Logger.debug(`Created backup: ${backup}`);
-            } catch (backupError) {
-                Logger.warn(`Backup creation failed: ${backupError.message}`);
-            }
             await fs.writeFile(CONFIG.BOTS_FILE, JSON.stringify(bots, null, 2));
             Logger.success(`Saved ${bots.length} bots to file`);
             return true;
