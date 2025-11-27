@@ -863,6 +863,9 @@ const NameChangeTask = {
         TaskState.nameChange.total = connectedBots.length;
         Logger.info(`Starting name change task for ${connectedBots.length} bots with ${names.length} names`);
 
+        // Track which bots were successfully updated for file persistence
+        const successfulUpdates = [];
+
         // Assign names in round-robin fashion
         for (let i = 0; i < connectedBots.length; i++) {
             if (!TaskState.nameChange.isRunning) break;
@@ -885,6 +888,14 @@ const NameChangeTask = {
                     success: true,
                     assignedName
                 });
+                
+                // Update bot name in connection manager
+                if (connection && connection.bot) {
+                    connection.bot.name = assignedName;
+                }
+                
+                // Track for file persistence
+                successfulUpdates.push({ botId, gc: connection?.bot.gc, newName: assignedName });
                 Logger.success(`Bot ${botId}: Name changed to "${assignedName}"`);
             } else {
                 TaskState.nameChange.failed++;
@@ -899,6 +910,24 @@ const NameChangeTask = {
             }
 
             await Utils.delay(150);
+        }
+
+        // Save updated bot names to file
+        if (successfulUpdates.length > 0) {
+            try {
+                const allBots = await FileManager.loadBots();
+                const updatedBots = allBots.map(bot => {
+                    const update = successfulUpdates.find(u => u.gc === bot.gc);
+                    if (update) {
+                        return { ...bot, name: update.newName };
+                    }
+                    return bot;
+                });
+                await FileManager.saveBots(updatedBots);
+                Logger.success(`Updated ${successfulUpdates.length} bot names in fukrey.json`);
+            } catch (error) {
+                Logger.error(`Failed to save updated bot names: ${error.message}`);
+            }
         }
 
         Logger.success(`Name change task completed: ${TaskState.nameChange.completed} succeeded, ${TaskState.nameChange.failed} failed`);
