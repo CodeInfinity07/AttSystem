@@ -451,6 +451,34 @@ class BotConnection extends EventEmitter {
         return Utils.sendMessage(this.ws, JSON.stringify(msg));
     }
 
+    sendNameChangeMessage(newName) {
+        if (!this.isAuthenticated) {
+            Logger.warn(`Bot ${this.bot.name}: Cannot send name change - not authenticated`);
+            return false;
+        }
+
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            Logger.warn(`Bot ${this.bot.name}: Cannot send name change - WebSocket not open`);
+            return false;
+        }
+
+        const msg = {
+            RH: "us",
+            PU: "EP",
+            PY: JSON.stringify({
+                UN: newName
+            })
+        };
+
+        const success = Utils.sendMessage(this.ws, JSON.stringify(msg));
+        if (success) {
+            Logger.info(`Bot ${this.bot.name}: Name change message sent (new name: ${newName})`);
+        } else {
+            Logger.warn(`Bot ${this.bot.name}: Failed to send name change message`);
+        }
+        return success;
+    }
+
     sendPingMessage() {
         const msg = {
             RH: "JO",
