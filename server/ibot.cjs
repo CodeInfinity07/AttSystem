@@ -429,7 +429,7 @@ class BotConnection extends EventEmitter {
             const msg = {
                 RH: "CBC",
                 PU: "RC",
-                SQ: 2,
+                SQ: currentSQ,
                 PY: JSON.stringify({
                     R: 2,
                     CD: [],
