@@ -419,11 +419,6 @@ class BotConnection extends EventEmitter {
         const code = clubCode || this.currentClubCode || CONFIG.CLUB_CODE;
         const currentSQ = this.sequenceNumber++;
         
-        // Reset sequence number back to 2 after it reaches 10 (cycle: 2-10)
-        if (this.sequenceNumber > 10) {
-            this.sequenceNumber = 2;
-        }
-        
         // Special message when SQ = 10
         if (currentSQ === 10) {
             const msg = {
