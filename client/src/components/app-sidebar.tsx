@@ -1,4 +1,4 @@
-import { Bot, MessageSquare, UserCog, PlugZap, Settings } from "lucide-react";
+import { Bot, Flame, UserCog, PlugZap, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -20,9 +20,9 @@ const items = [
     icon: PlugZap,
   },
   {
-    title: "Messages",
+    title: "Attack",
     url: "/messages",
-    icon: MessageSquare,
+    icon: Flame,
   },
   {
     title: "Name Change",
