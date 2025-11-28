@@ -33,7 +33,7 @@ export default function MessagesPage() {
     mutationFn: () => apiRequest('POST', '/api/tasks/message/start', { clubCode: clubCode || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/message/status'] });
-      toast({ title: "Message task started" });
+      toast({ title: "Attack task started" });
     },
     onError: (error: any) => {
       toast({ 
@@ -48,7 +48,7 @@ export default function MessagesPage() {
     mutationFn: () => apiRequest('POST', '/api/tasks/message/stop'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks/message/status'] });
-      toast({ title: "Message task stopped" });
+      toast({ title: "Attack task stopped" });
     },
     onError: () => {
       toast({ title: "Failed to stop task", variant: "destructive" });
@@ -68,8 +68,8 @@ export default function MessagesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold mb-2">Messages Task</h1>
-        <p className="text-muted-foreground">Send messages to bots in a specific club</p>
+        <h1 className="text-2xl font-bold mb-2">Attack Task</h1>
+        <p className="text-muted-foreground">Send attacks to bots in a specific club</p>
       </div>
 
       <div className="bg-card border border-card-border rounded-lg p-4 space-y-3">
@@ -89,7 +89,7 @@ export default function MessagesPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <TaskControlCard
-          title="Message Task"
+          title="Attack Task"
           status={isRunning ? "Running" : "Idle"}
           onStart={() => startMutation.mutate()}
           onStop={() => stopMutation.mutate()}
