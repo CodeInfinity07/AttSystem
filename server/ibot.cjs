@@ -1323,6 +1323,16 @@ app.post('/api/bots/import', async (req, res) => {
     }
 });
 
+// Helper function to extract JSON from text (handles HTTP headers)
+function extractJSON(text) {
+    const trimmed = text.trim();
+    const jsonStart = trimmed.indexOf('{');
+    if (jsonStart === -1) {
+        throw new Error('No JSON object found in text');
+    }
+    return JSON.parse(trimmed.substring(jsonStart));
+}
+
 // Import bots v2 (new format with request/response payloads)
 app.post('/api/bots/import-v2', async (req, res) => {
     try {
@@ -1333,15 +1343,15 @@ app.post('/api/bots/import-v2', async (req, res) => {
         }
 
         try {
-            // Parse request payload to extract AT (Access Token)
-            const reqData = JSON.parse(requestPayload);
+            // Extract and parse request payload (handles HTTP headers)
+            const reqData = extractJSON(requestPayload);
             const at = reqData.AT;
             if (!at) {
                 return res.json({ success: false, message: 'Could not find AT (Access Token) in request payload' });
             }
 
-            // Parse response payload to extract UI, DD, GC, and name
-            const respData = JSON.parse(responsePayload);
+            // Extract and parse response payload (handles HTTP headers)
+            const respData = extractJSON(responsePayload);
             const ui = respData.UI;
             const dd = respData.DD;
             const gc = respData.PY?.AV || respData.GC; // Try both possible locations
