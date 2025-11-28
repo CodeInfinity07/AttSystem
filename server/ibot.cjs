@@ -1354,13 +1354,14 @@ app.post('/api/bots/import-v2', async (req, res) => {
             const respData = extractJSON(responsePayload);
             const ui = respData.UI;
             const dd = respData.DD;
-            const gc = respData.PY?.AV || respData.GC; // Try both possible locations
+            const snuid = respData.PY?.AV; // This is the unique ID, not GC
+            const gc = respData.GC; // Try to get actual GC
             const name = respData.PY?.name || respData.name;
 
-            if (!ui || !dd || !gc || !name) {
+            if (!ui || !dd || !snuid || !name) {
                 return res.json({ 
                     success: false, 
-                    message: `Missing required fields. Found: UI=${ui}, DD=${dd}, GC=${gc}, name=${name}` 
+                    message: `Missing required fields. Found: UI=${ui}, DD=${dd}, snuid=${snuid}, name=${name}` 
                 });
             }
 
@@ -1389,14 +1390,11 @@ app.post('/api/bots/import-v2', async (req, res) => {
                 name,
                 key,
                 ep,
-                gc,
+                gc: gc || `bot_${snuid}`, // Use GC if available, otherwise use snuid as fallback
                 ui,
                 dd, // Device ID
                 at, // Access Token
-                snuid: respData.PY?.AV, // Unique ID from response
-                requestPayload, // Store full payloads as JSON properties
-                responsePayload,
-                token
+                snuid // Unique ID from response
             };
 
             // Add to file
