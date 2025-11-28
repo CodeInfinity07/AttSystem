@@ -1223,7 +1223,7 @@ app.post('/api/bots/reload', async (req, res) => {
     }
 });
 
-// Import bots
+// Import bots (legacy format)
 app.post('/api/bots/import', async (req, res) => {
     try {
         const { botStrings } = req.body;
@@ -1319,6 +1319,98 @@ app.post('/api/bots/import', async (req, res) => {
         });
     } catch (error) {
         Logger.error(`Import bots error: ${error.message}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Import bots v2 (new format with request/response payloads)
+app.post('/api/bots/import-v2', async (req, res) => {
+    try {
+        const { requestPayload, responsePayload, token } = req.body;
+        
+        if (!requestPayload || !responsePayload || !token) {
+            return res.json({ success: false, message: 'Missing request payload, response payload, or token' });
+        }
+
+        try {
+            // Parse request payload to extract AT (Access Token)
+            const reqData = JSON.parse(requestPayload);
+            const at = reqData.AT;
+            if (!at) {
+                return res.json({ success: false, message: 'Could not find AT (Access Token) in request payload' });
+            }
+
+            // Parse response payload to extract UI, DD, GC, and name
+            const respData = JSON.parse(responsePayload);
+            const ui = respData.UI;
+            const dd = respData.DD;
+            const gc = respData.PY?.AV || respData.GC; // Try both possible locations
+            const name = respData.PY?.name || respData.name;
+
+            if (!ui || !dd || !gc || !name) {
+                return res.json({ 
+                    success: false, 
+                    message: `Missing required fields. Found: UI=${ui}, DD=${dd}, GC=${gc}, name=${name}` 
+                });
+            }
+
+            // Decode token to extract KEY and EP
+            const tokenData = JSON.parse(Buffer.from(token.trim(), 'base64').toString('utf-8'));
+            const pyData = typeof tokenData.PY === 'string' 
+                ? JSON.parse(tokenData.PY) 
+                : tokenData.PY;
+            const key = pyData.KEY;
+            const ep = pyData.EP;
+
+            if (!key || !ep) {
+                return res.json({ success: false, message: 'Could not extract KEY or EP from token' });
+            }
+
+            // Check if bot already exists
+            const existingBots = await FileManager.loadBots();
+            const botExists = existingBots.some(b => b.gc === gc);
+
+            if (botExists) {
+                return res.json({ success: false, message: `Bot with GC ${gc} already exists` });
+            }
+
+            // Create bot object with all properties
+            const newBot = {
+                name,
+                key,
+                ep,
+                gc,
+                ui,
+                dd, // Device ID
+                at, // Access Token
+                snuid: respData.PY?.AV, // Unique ID from response
+                requestPayload, // Store full payloads as JSON properties
+                responsePayload,
+                token
+            };
+
+            // Add to file
+            existingBots.push(newBot);
+            await FileManager.saveBots(existingBots);
+            
+            // Reload bots in connection manager
+            await connectionManager.reloadBots();
+
+            Logger.success(`Imported bot v2: ${newBot.name} (${gc})`);
+            res.json({ 
+                success: true, 
+                message: `Successfully imported bot: ${name}`,
+                bot: { name, gc, ui, dd }
+            });
+        } catch (parseError) {
+            Logger.error(`Failed to parse payloads: ${parseError.message}`);
+            return res.json({ 
+                success: false, 
+                message: `Failed to parse payloads: ${parseError.message}` 
+            });
+        }
+    } catch (error) {
+        Logger.error(`Import bot v2 error: ${error.message}`);
         res.status(500).json({ success: false, message: error.message });
     }
 });

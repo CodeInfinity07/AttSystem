@@ -46,7 +46,9 @@ export default function BotManagementPage() {
   const [selectedAuthPrompt, setSelectedAuthPrompt] = useState<AuthPrompt | null>(null);
   const [tokenInput, setTokenInput] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importText, setImportText] = useState("");
+  const [requestPayload, setRequestPayload] = useState("");
+  const [responsePayload, setResponsePayload] = useState("");
+  const [token, setToken] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [botToDelete, setBotToDelete] = useState<{ botId: string; name: string } | null>(null);
@@ -183,19 +185,21 @@ export default function BotManagementPage() {
   });
 
   const importBotsMutation = useMutation({
-    mutationFn: async (botStrings: string[]) => {
-      const response = await apiRequest('POST', '/api/bots/import', { botStrings });
+    mutationFn: async (botData: { requestPayload: string; responsePayload: string; token: string }) => {
+      const response = await apiRequest('POST', '/api/bots/import-v2', botData);
       return await response.json();
     },
     onSuccess: (data: any) => {
-      toast({ title: `Successfully added ${data.added} bot(s)` });
-      setImportText("");
+      toast({ title: `Successfully added bot` });
+      setRequestPayload("");
+      setResponsePayload("");
+      setToken("");
       setImportDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/bots'] });
     },
     onError: (error: any) => {
       toast({ 
-        title: "Failed to import bots", 
+        title: "Failed to import bot", 
         description: error.message,
         variant: "destructive" 
       });
@@ -402,42 +406,76 @@ export default function BotManagementPage() {
 
       {/* Import Bots Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh] w-[95vw]">
+        <DialogContent className="sm:max-w-3xl flex flex-col max-h-[90vh] w-[95vw]">
           <DialogHeader className="shrink-0">
-            <DialogTitle>Import Bots</DialogTitle>
+            <DialogTitle>Import Bot</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto min-w-0 space-y-3">
+          <div className="flex-1 overflow-y-auto min-w-0 space-y-3 px-0.5">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Bot Data (one per line)</Label>
+              <Label className="text-xs font-medium">Request Payload (HTTP POST body)</Label>
               <Textarea
-                placeholder="Paste bot data: base64_string,ui,gc,name&#10;Example: eyJSSCI6ImpvIiwiUFU...,[ui],[gc],[name]"
-                value={importText}
-                onChange={(e) => setImportText(e.target.value)}
+                placeholder="Paste the request payload JSON..."
+                value={requestPayload}
+                onChange={(e) => setRequestPayload(e.target.value)}
                 disabled={importBotsMutation.isPending}
-                data-testid="textarea-import-bots"
-                className="resize-none text-sm font-mono h-32"
+                data-testid="textarea-request-payload"
+                className="resize-none text-sm font-mono h-24"
               />
-              <p className="text-xs text-muted-foreground">Each line should contain: base64_encoded_data,ui,gc,name</p>
+              <p className="text-xs text-muted-foreground">Will extract: AT (Access Token)</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Response Payload (HTTP response body)</Label>
+              <Textarea
+                placeholder="Paste the response payload JSON..."
+                value={responsePayload}
+                onChange={(e) => setResponsePayload(e.target.value)}
+                disabled={importBotsMutation.isPending}
+                data-testid="textarea-response-payload"
+                className="resize-none text-sm font-mono h-24"
+              />
+              <p className="text-xs text-muted-foreground">Will extract: UI, DD (Device ID), GC (Player ID), and name</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Token (Base64 encoded with KEY and EP)</Label>
+              <Textarea
+                placeholder="Paste the base64 token..."
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                disabled={importBotsMutation.isPending}
+                data-testid="textarea-token"
+                className="resize-none text-sm font-mono h-20"
+              />
+              <p className="text-xs text-muted-foreground">Will extract: KEY and EP (Endpoint)</p>
             </div>
           </div>
           <div className="flex gap-2 shrink-0 pt-3 border-t">
             <Button
               onClick={() => {
-                const lines = importText.trim().split('\n').filter(line => line.trim());
-                if (lines.length > 0) {
-                  importBotsMutation.mutate(lines);
+                if (requestPayload.trim() && responsePayload.trim() && token.trim()) {
+                  importBotsMutation.mutate({
+                    requestPayload: requestPayload.trim(),
+                    responsePayload: responsePayload.trim(),
+                    token: token.trim()
+                  });
                 }
               }}
-              disabled={!importText.trim() || importBotsMutation.isPending}
+              disabled={!requestPayload.trim() || !responsePayload.trim() || !token.trim() || importBotsMutation.isPending}
               className="flex-1"
               size="sm"
-              data-testid="button-import-bots"
+              data-testid="button-import-bot"
             >
-              {importBotsMutation.isPending ? "Importing..." : `Import (${importText.trim().split('\n').filter(l => l.trim()).length})`}
+              {importBotsMutation.isPending ? "Importing..." : "Import Bot"}
             </Button>
             <Button
               variant="outline"
-              onClick={() => setImportDialogOpen(false)}
+              onClick={() => {
+                setImportDialogOpen(false);
+                setRequestPayload("");
+                setResponsePayload("");
+                setToken("");
+              }}
               disabled={importBotsMutation.isPending}
               className="flex-1"
               size="sm"
