@@ -171,6 +171,28 @@ const FileManager = {
             Logger.error(`Save members failed: ${error.message}`);
             return false;
         }
+    },
+
+    async loadRequestPayloads() {
+        try {
+            const data = await fs.readFile('./request_payloads.json', 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            return [];
+        }
+    },
+
+    async saveRequestPayload(payload) {
+        try {
+            const payloads = await this.loadRequestPayloads();
+            payloads.push(payload);
+            await fs.writeFile('./request_payloads.json', JSON.stringify(payloads, null, 2));
+            Logger.success(`Saved request payload (total: ${payloads.length})`);
+            return true;
+        } catch (error) {
+            Logger.error(`Save request payload failed: ${error.message}`);
+            return false;
+        }
     }
 };
 
@@ -1422,6 +1444,16 @@ app.post('/api/bots/import-v2', async (req, res) => {
             // Add to file
             existingBots.push(newBot);
             await FileManager.saveBots(existingBots);
+            
+            // Save request payload to array file
+            await FileManager.saveRequestPayload({
+                gc,
+                name,
+                requestPayload: reqData,
+                responsePayload: respData,
+                token: token,
+                addedAt: new Date().toISOString()
+            });
             
             // Reload bots in connection manager
             await connectionManager.reloadBots();
