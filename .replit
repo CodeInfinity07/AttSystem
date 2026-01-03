@@ -8,7 +8,7 @@ channel = "stable-25_05"
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["node", "./dist/index.cjs"]
 
 [[ports]]
 localPort = 443
@@ -24,19 +24,7 @@ externalPort = 80
 
 [[ports]]
 localPort = 24678
-externalPort = 4200
-
-[[ports]]
-localPort = 33563
-externalPort = 5000
-
-[[ports]]
-localPort = 35749
-externalPort = 3000
-
-[[ports]]
-localPort = 45275
-externalPort = 3001
+externalPort = 3003
 
 [env]
 PORT = "5000"
@@ -57,13 +45,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [agent]
 expertMode = true
