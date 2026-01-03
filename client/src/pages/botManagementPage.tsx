@@ -343,7 +343,7 @@ export default function BotManagementPage() {
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl sm:text-3xl font-bold">{stats.totalBots + 246}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{stats.totalBots}</div>
           </CardContent>
         </Card>
 
@@ -352,7 +352,7 @@ export default function BotManagementPage() {
             <CardTitle className="text-xs font-semibold text-muted-foreground">Connected</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl sm:text-3xl font-bold text-info">{stats.connected + 246}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-info">{stats.connected}</div>
           </CardContent>
         </Card>
 
@@ -361,7 +361,7 @@ export default function BotManagementPage() {
             <CardTitle className="text-xs font-semibold text-muted-foreground">Ready</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="text-2xl sm:text-3xl font-bold text-muted-foreground">121</div>
+            <div className="text-2xl sm:text-3xl font-bold text-muted-foreground">{disconnectedCount}</div>
           </CardContent>
         </Card>
 
