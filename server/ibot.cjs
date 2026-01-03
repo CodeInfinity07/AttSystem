@@ -245,7 +245,6 @@ class BotConnection extends EventEmitter {
         this.ws.on('message', (data) => {
             try {
                 const msg = Utils.decodeFrame(data);
-                console.log(msg)
                 this.handleMessage(msg);
             } catch (error) {
                 Logger.error(`Message parse error for ${this.bot.name}: ${error.message}`);
@@ -254,12 +253,20 @@ class BotConnection extends EventEmitter {
 
         this.ws.on('error', (error) => {
             Logger.error(`WebSocket error for ${this.bot.name}: ${error.message}`);
-            this.emit('error', error);
+            try {
+                this.emit('error', error);
+            } catch (emitError) {
+                Logger.error(`Error emitting error event for ${this.bot.name}: ${emitError.message}`);
+            }
         });
 
         this.ws.on('close', () => {
             Logger.debug(`WebSocket closed for ${this.bot.name}`);
-            this.handleDisconnection();
+            try {
+                this.handleDisconnection();
+            } catch (error) {
+                Logger.error(`Error handling disconnection for ${this.bot.name}: ${error.message}`);
+            }
         });
     }
 
@@ -667,10 +674,24 @@ class PersistentConnectionManager {
             this.connections.set(botId, connection);
             Logger.info(`[connectBot] Connection added to map immediately. Connections now: ${Array.from(this.connections.keys()).join(', ')}`);
             
-            // Handle disconnection
+            // Handle disconnection - only affects this specific bot
             connection.on('disconnected', () => {
-                Logger.warn(`Bot ${bot.name} disconnected unexpectedly`);
-                this.connections.delete(botId);
+                try {
+                    Logger.warn(`Bot ${bot.name} (${botId}) disconnected unexpectedly`);
+                    this.connections.delete(botId);
+                } catch (error) {
+                    Logger.error(`Error handling disconnection for ${botId}: ${error.message}`);
+                }
+            });
+            
+            // Handle errors - isolate to this specific bot only
+            connection.on('error', (error) => {
+                try {
+                    Logger.error(`Bot ${bot.name} (${botId}) error: ${error.message}`);
+                    // Only remove this specific bot's connection, not others
+                } catch (err) {
+                    Logger.error(`Error handling bot error for ${botId}: ${err.message}`);
+                }
             });
 
             await connection.connect();
