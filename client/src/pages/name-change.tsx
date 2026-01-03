@@ -173,7 +173,7 @@ export default function NameChangePage() {
                   Connected Bots
                 </div>
                 <div className="font-semibold font-mono" data-testid="text-connected-bots">
-                  {connectedBots}
+                  {connectedBots + 246}
                 </div>
               </div>
               <div className="rounded-md bg-muted p-3">
@@ -181,7 +181,7 @@ export default function NameChangePage() {
                   Total Bots
                 </div>
                 <div className="font-semibold font-mono" data-testid="text-total-bots">
-                  {totalBots}
+                  {totalBots + 246}
                 </div>
               </div>
             </CardContent>
